@@ -165,6 +165,7 @@ export const classInstanceApi = {
     startDate?: string;
     endDate?: string;
     status?: string;
+    limit?: number;
   }): Promise<IClassInstance[]> {
     const query = new URLSearchParams();
     if (params?.semesterId) query.set('semesterId', params.semesterId);
@@ -173,6 +174,7 @@ export const classInstanceApi = {
     if (params?.startDate) query.set('startDate', params.startDate);
     if (params?.endDate) query.set('endDate', params.endDate);
     if (params?.status) query.set('status', params.status);
+    if (params?.limit) query.set('limit', String(params.limit));
 
     const queryString = query.toString();
     const url = queryString ? `${API_BASE}/class-instances?${queryString}` : `${API_BASE}/class-instances`;

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { CalendarDashboard } from './components/CalendarDashboard.js';
 import { SemesterManager } from './components/SemesterManager.js';
 import { CourseManager } from './components/CourseManager.js';
 import { ScheduleManager } from './components/ScheduleManager.js';
@@ -13,7 +14,8 @@ import {
   Layers, 
   GraduationCap,
   BookOpen,
-  CalendarCheck
+  CalendarCheck,
+  Calendar as CalendarIcon
 } from 'lucide-react';
 
 const queryClient = new QueryClient({
@@ -41,7 +43,7 @@ interface HealthResponse {
 }
 
 function MainDashboard() {
-  const [activeTab, setActiveTab] = useState<'classes' | 'academic' | 'health'>('classes');
+  const [activeTab, setActiveTab] = useState<'calendar' | 'classes' | 'academic' | 'health'>('calendar');
   const [selectedSemesterId, setSelectedSemesterId] = useState<string | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
@@ -108,17 +110,29 @@ function MainDashboard() {
                   Academic Study Tracker
                 </h1>
                 <span className="px-2 py-0.5 rounded-full bg-indigo-950 border border-indigo-700/50 text-indigo-300 text-[10px] font-semibold uppercase tracking-wider">
-                  Phase 3
+                  Phase 4
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Class Instances &bull; Attendance Tracking &bull; Academic Schedule Engine
+                Academic Calendar &bull; Daily Class View &bull; Attendance Management
               </p>
             </div>
           </div>
 
           {/* Tab Navigation */}
           <div className="flex items-center p-1 rounded-xl bg-slate-900 border border-slate-800">
+            <button
+              id="tab-calendar-btn"
+              onClick={() => setActiveTab('calendar')}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                activeTab === 'calendar'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <CalendarIcon className="w-3.5 h-3.5" />
+              Calendar
+            </button>
             <button
               id="tab-classes-btn"
               onClick={() => setActiveTab('classes')}
@@ -153,12 +167,24 @@ function MainDashboard() {
               }`}
             >
               <Activity className="w-3.5 h-3.5" />
-              System Diagnostics
+              Diagnostics
             </button>
           </div>
         </header>
 
-        {/* Tab 1: Class Instances & Attendance Tracking */}
+        {/* Tab 1: Main Academic Calendar & Dashboard (Default Primary View) */}
+        {activeTab === 'calendar' && (
+          <main className="space-y-6">
+            <CalendarDashboard
+              selectedSemesterId={selectedSemesterId}
+              onSelectSemester={handleSelectSemester}
+              onNavigateToSetup={() => setActiveTab('academic')}
+              onNavigateToGenerator={() => setActiveTab('classes')}
+            />
+          </main>
+        )}
+
+        {/* Tab 2: Class Instances & Attendance Tracking */}
         {activeTab === 'classes' && (
           <main className="space-y-6">
             <ClassInstanceManager
@@ -168,7 +194,7 @@ function MainDashboard() {
           </main>
         )}
 
-        {/* Tab 2: Academic Setup (Semesters, Courses, Schedules) */}
+        {/* Tab 3: Academic Setup (Semesters, Courses, Schedules) */}
         {activeTab === 'academic' && (
           <main className="space-y-6">
             {/* Hierarchy Guide */}
@@ -182,7 +208,7 @@ function MainDashboard() {
                 <span className="text-slate-500">&rarr;</span>
                 <span className="px-2 py-0.5 rounded bg-slate-800 text-indigo-300 font-medium">3. Weekly Schedule</span>
                 <span className="text-slate-500">&rarr;</span>
-                <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-medium border border-emerald-800/50">4. Class Instances (Phase 3 Active)</span>
+                <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-medium border border-emerald-800/50">4. Calendar Dashboard (Phase 4 Active)</span>
               </div>
             </div>
 
@@ -210,7 +236,7 @@ function MainDashboard() {
           </main>
         )}
 
-        {/* Tab 3: System Health Diagnostics */}
+        {/* Tab 4: System Health Diagnostics */}
         {activeTab === 'health' && (
           <main className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -219,13 +245,10 @@ function MainDashboard() {
                   <span className="text-xs font-medium text-slate-400 uppercase">Frontend</span>
                   <Globe className="w-4 h-4 text-blue-400" />
                 </div>
-                <div className="mt-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                    <span className="font-semibold text-slate-200 text-sm">React 19 + Vite</span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1">TanStack Query &bull; Tailwind CSS</p>
-                </div>
+                <p className="text-xl font-bold text-slate-100 mt-2">Vite + React</p>
+                <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1 font-medium">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse" /> Operational
+                </p>
               </div>
 
               <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
@@ -233,96 +256,90 @@ function MainDashboard() {
                   <span className="text-xs font-medium text-slate-400 uppercase">Backend API</span>
                   <Server className="w-4 h-4 text-indigo-400" />
                 </div>
-                <div className="mt-3">
-                  <div className="flex items-center gap-2">
-                    {healthData ? (
-                      <>
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                        <span className="font-semibold text-slate-200 text-sm">Express Running</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                        <span className="font-semibold text-rose-400 text-sm">Disconnected</span>
-                      </>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1">Node.js &bull; Port 5000</p>
-                </div>
+                <p className="text-xl font-bold text-slate-100 mt-2">Node / Express</p>
+                {healthLoading ? (
+                  <p className="text-xs text-slate-400 mt-1">Checking health...</p>
+                ) : healthError ? (
+                  <p className="text-xs text-rose-400 mt-1 font-medium">{healthError}</p>
+                ) : (
+                  <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1 font-medium">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" /> {healthData?.status === 'ok' ? 'Healthy' : 'Degraded'}
+                    {latency !== null && <span className="text-slate-400 font-normal">({latency}ms)</span>}
+                  </p>
+                )}
               </div>
 
               <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-slate-400 uppercase">Database</span>
-                  <Database className="w-4 h-4 text-teal-400" />
+                  <Database className="w-4 h-4 text-emerald-400" />
                 </div>
-                <div className="mt-3">
-                  <div className="flex items-center gap-2">
-                    {healthData?.database.status === 'connected' ? (
-                      <>
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                        <span className="font-semibold text-slate-200 text-sm">Connected</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                        <span className="font-semibold text-amber-300 text-sm">Standby / Unconnected</span>
-                      </>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1">
-                    {healthData?.database.status === 'connected'
-                      ? `Host: ${healthData.database.host || 'MongoDB Atlas'}`
-                      : 'Requires MONGODB_URI'}
+                <p className="text-xl font-bold text-slate-100 mt-2">MongoDB Atlas</p>
+                {healthLoading ? (
+                  <p className="text-xs text-slate-400 mt-1">Connecting...</p>
+                ) : healthData?.database?.status === 'connected' ? (
+                  <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1 font-medium">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" /> Connected
+                    <span className="text-slate-400 font-normal truncate max-w-[120px]">({healthData.database.database || 'academic_tracker'})</span>
                   </p>
-                </div>
+                ) : (
+                  <p className="text-xs text-amber-400 mt-1 font-medium">
+                    {healthData?.database?.status || 'Disconnected'}
+                  </p>
+                )}
               </div>
             </div>
 
-            <div className="rounded-2xl bg-slate-900/90 border border-slate-800 p-5 space-y-4">
+            {/* Diagnostic Details */}
+            <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-200">Live Health Check Payload</h3>
-                  <p className="text-xs text-slate-500">Endpoint: <code className="text-indigo-300">GET /api/health</code></p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {lastChecked && (
-                    <span className="text-xs text-slate-500">
-                      Checked {lastChecked.toLocaleTimeString()}
-                    </span>
-                  )}
-                  {latency !== null && (
-                    <span className="text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded">
-                      {latency}ms
-                    </span>
-                  )}
-                  <button
-                    onClick={fetchHealth}
-                    disabled={healthLoading}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition cursor-pointer"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${healthLoading ? 'animate-spin' : ''}`} />
-                    Refresh
-                  </button>
-                </div>
+                <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-indigo-400" />
+                  Live Diagnostics
+                </h3>
+                <button
+                  onClick={fetchHealth}
+                  disabled={healthLoading}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 text-xs font-medium transition cursor-pointer disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${healthLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </button>
               </div>
 
-              {healthError ? (
-                <div className="p-4 rounded-xl bg-rose-950/40 border border-rose-800 text-rose-300 text-xs">
-                  {healthError}
+              {healthData && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
+                    <span className="text-slate-500 block">Service</span>
+                    <span className="text-slate-200 font-mono font-medium">{healthData.service}</span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
+                    <span className="text-slate-500 block">Environment</span>
+                    <span className="text-slate-200 font-mono font-medium">{healthData.environment}</span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
+                    <span className="text-slate-500 block">Uptime</span>
+                    <span className="text-slate-200 font-mono font-medium">{Math.floor(healthData.uptimeSeconds / 60)}m {Math.floor(healthData.uptimeSeconds % 60)}s</span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
+                    <span className="text-slate-500 block">Host Shard</span>
+                    <span className="text-slate-200 font-mono font-medium truncate block">{healthData.database.host || 'Atlas'}</span>
+                  </div>
                 </div>
-              ) : healthData ? (
-                <pre className="bg-slate-950 p-4 rounded-xl font-mono text-xs overflow-x-auto text-slate-300">
-                  {JSON.stringify(healthData, null, 2)}
-                </pre>
-              ) : null}
+              )}
+
+              {lastChecked && (
+                <p className="text-[11px] text-slate-500 text-right">
+                  Last checked: {lastChecked.toLocaleTimeString()}
+                </p>
+              )}
             </div>
           </main>
         )}
 
         {/* Footer */}
-        <footer className="text-center text-xs text-slate-600 pt-4 border-t border-slate-800/40">
-          Academic Study Tracker &bull; Phase 3: Class Instance Generation & Attendance Foundation
+        <footer className="border-t border-slate-800/80 pt-4 text-center text-xs text-slate-500">
+          <p>Academic Study Tracker &bull; Phase 4 &bull; Built with React, Vite, Node.js, Express & MongoDB Atlas</p>
         </footer>
       </div>
     </div>

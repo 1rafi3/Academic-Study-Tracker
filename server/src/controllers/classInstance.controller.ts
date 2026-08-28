@@ -166,7 +166,7 @@ export const generateClassInstances = async (req: Request, res: Response): Promi
 
 export const getClassInstances = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { semesterId, courseId, date, startDate, endDate, status } = req.query;
+    const { semesterId, courseId, date, startDate, endDate, status, limit } = req.query;
     const filter: Record<string, unknown> = {};
 
     if (semesterId) {
@@ -206,10 +206,19 @@ export const getClassInstances = async (req: Request, res: Response): Promise<vo
       filter.date = dateRange;
     }
 
-    const instances = await ClassInstance.find(filter)
+    let query = ClassInstance.find(filter)
       .populate('courseId', 'courseCode courseName color instructor')
       .populate('semesterId', 'name year term isActive')
       .sort({ date: 1, startTime: 1 });
+
+    if (limit) {
+      const parsedLimit = parseInt(String(limit), 10);
+      if (!isNaN(parsedLimit) && parsedLimit > 0) {
+        query = query.limit(parsedLimit);
+      }
+    }
+
+    const instances = await query.exec();
 
     res.status(200).json({
       success: true,
