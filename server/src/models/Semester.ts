@@ -43,6 +43,11 @@ const semesterSchema = new Schema<ISemesterDocument>(
       type: Boolean,
       default: false,
     },
+    isArchived: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
   },
   {
     timestamps: true,

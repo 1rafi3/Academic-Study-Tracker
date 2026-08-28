@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { scheduleApi, courseApi } from '../api/academicApi.js';
 import type { ISchedule, DayOfWeek, ICourse } from '../types/academic.js';
@@ -19,7 +19,7 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
   const [dayOfWeek, setDayOfWeek] = useState<DayOfWeek>('Sunday');
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('11:30');
-  const [room, setRoom] = useState('Room 302');
+  const [room, setRoom] = useState('');
   const [type, setType] = useState<'Lecture' | 'Lab' | 'Tutorial' | 'Seminar' | 'Other'>('Lecture');
 
   const { data: course } = useQuery<ICourse>({
@@ -33,6 +33,18 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
     queryFn: () => (selectedCourseId ? scheduleApi.getByCourse(selectedCourseId) : Promise.resolve([])),
     enabled: Boolean(selectedCourseId),
   });
+
+  // Lock background scroll when modal open
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isModalOpen]);
 
   const addMutation = useMutation({
     mutationFn: (data: Partial<ISchedule>) =>
@@ -75,7 +87,7 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
     setDayOfWeek('Sunday');
     setStartTime('10:00');
     setEndTime('11:30');
-    setRoom('Room 302');
+    setRoom('');
     setType('Lecture');
     setFormError(null);
     setIsModalOpen(true);
@@ -113,7 +125,7 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
     }
 
     if (startTime >= endTime) {
-      setFormError('End time must be after start time');
+      setFormError('End time must be later than start time');
       return;
     }
 
@@ -152,7 +164,7 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
               className="w-2.5 h-2.5 rounded-full"
               style={{ backgroundColor: course?.color || '#6366f1' }}
             />
-            <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+            <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
               <Clock className="w-5 h-5 text-indigo-400" />
               Weekly Class Schedule: {course?.courseCode || 'Course'}
             </h2>
@@ -164,7 +176,7 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
         <button
           id="add-schedule-btn"
           onClick={openCreateModal}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           Add Schedule Slot
@@ -197,7 +209,7 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
           {schedules.map((sch) => (
             <div
               key={sch._id}
-              className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between"
+              className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between space-y-3"
             >
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -225,11 +237,11 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
                 )}
               </div>
 
-              <div className="flex items-center justify-end gap-1 border-t border-slate-800/60 pt-3 mt-3">
+              <div className="flex items-center justify-end gap-1 border-t border-slate-800/60 pt-3">
                 <button
                   title="Edit Schedule"
                   onClick={() => openEditModal(sch)}
-                  className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition cursor-pointer"
+                  className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition cursor-pointer"
                 >
                   <Edit2 className="w-3.5 h-3.5" />
                 </button>
@@ -240,7 +252,7 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
                       deleteMutation.mutate(sch._id);
                     }
                   }}
-                  className="p-1 rounded hover:bg-rose-950 text-slate-400 hover:text-rose-400 transition cursor-pointer"
+                  className="p-1.5 rounded-lg hover:bg-rose-950 text-slate-400 hover:text-rose-400 transition cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -250,11 +262,11 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Responsive Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 md:p-4 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-5 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-900">
               <h3 className="text-base font-bold text-slate-100">
                 {editingSchedule ? 'Edit Schedule Slot' : 'Add Weekly Schedule Slot'}
               </h3>
@@ -263,16 +275,16 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
               </button>
             </div>
 
-            {formError && (
-              <div className="p-3 rounded-lg bg-rose-950/60 border border-rose-800 text-rose-300 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{formError}</span>
-              </div>
-            )}
+            <form id="schedule-form" onSubmit={handleSubmit} className="overflow-y-auto p-5 space-y-3 text-xs flex-1">
+              {formError && (
+                <div className="p-3 rounded-lg bg-rose-950/60 border border-rose-800 text-rose-300 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{formError}</span>
+                </div>
+              )}
 
-            <form onSubmit={handleSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Day of Week *</label>
+                <label className="block text-slate-300 font-semibold mb-1">Day of Week *</label>
                 <select
                   value={dayOfWeek}
                   onChange={(e) => setDayOfWeek(e.target.value as DayOfWeek)}
@@ -288,7 +300,7 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">Start Time (HH:mm) *</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Start Time (HH:mm) *</label>
                   <input
                     type="time"
                     required
@@ -298,7 +310,7 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">End Time (HH:mm) *</label>
+                  <label className="block text-slate-300 font-semibold mb-1">End Time (HH:mm) *</label>
                   <input
                     type="time"
                     required
@@ -311,7 +323,7 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">Room / Location</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Room / Location</label>
                   <input
                     type="text"
                     placeholder="e.g. Room 302 / Lab 4"
@@ -321,7 +333,7 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">Session Type</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Session Type</label>
                   <select
                     value={type}
                     onChange={(e) => setType(e.target.value as any)}
@@ -335,29 +347,30 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
                   </select>
                 </div>
               </div>
-
-              <div className="flex justify-end gap-2 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  id="save-schedule-btn"
-                  type="submit"
-                  disabled={addMutation.isPending || updateMutation.isPending}
-                  className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition cursor-pointer disabled:opacity-50"
-                >
-                  {addMutation.isPending || updateMutation.isPending
-                    ? 'Saving...'
-                    : editingSchedule
-                    ? 'Save Changes'
-                    : 'Add Slot'}
-                </button>
-              </div>
             </form>
+
+            <div className="p-4 border-t border-slate-800 bg-slate-950 flex justify-end gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                id="save-schedule-btn"
+                type="submit"
+                form="schedule-form"
+                disabled={addMutation.isPending || updateMutation.isPending}
+                className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50"
+              >
+                {addMutation.isPending || updateMutation.isPending
+                  ? 'Saving...'
+                  : editingSchedule
+                  ? 'Save Changes'
+                  : 'Add Slot'}
+              </button>
+            </div>
           </div>
         </div>
       )}

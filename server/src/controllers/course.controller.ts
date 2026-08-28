@@ -2,10 +2,11 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { Course } from '../models/Course.js';
 import { Semester } from '../models/Semester.js';
+import { ClassInstance } from '../models/ClassInstance.js';
 
 export const createCourse = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { courseCode, courseName, credit, instructor, description, color, semesterId, schedules } = req.body;
+    const { courseCode, courseName, credit, instructor, description, color, semesterId, schedules, isArchived } = req.body;
 
     if (!courseCode || !courseName || !semesterId) {
       res.status(400).json({
@@ -42,6 +43,7 @@ export const createCourse = async (req: Request, res: Response): Promise<void> =
       color: color || '#6366f1',
       semesterId,
       schedules: Array.isArray(schedules) ? schedules : [],
+      isArchived: Boolean(isArchived),
     });
 
     res.status(201).json({
@@ -75,7 +77,7 @@ export const createCourse = async (req: Request, res: Response): Promise<void> =
 
 export const getCourses = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { semesterId } = req.query;
+    const { semesterId, archived, all } = req.query;
     const filter: Record<string, unknown> = {};
 
     if (semesterId) {
@@ -87,6 +89,15 @@ export const getCourses = async (req: Request, res: Response): Promise<void> => 
         return;
       }
       filter.semesterId = semesterId;
+    }
+
+    // Filter archived courses
+    if (all !== 'true') {
+      if (archived === 'true') {
+        filter.isArchived = true;
+      } else {
+        filter.isArchived = { $ne: true };
+      }
     }
 
     const courses = await Course.find(filter)
@@ -139,7 +150,7 @@ export const getCourseById = async (req: Request, res: Response): Promise<void> 
 export const updateCourse = async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
-    const { courseCode, courseName, credit, instructor, description, color, semesterId } = req.body;
+    const { courseCode, courseName, credit, instructor, description, color, semesterId, schedules, isArchived } = req.body;
 
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       res.status(400).json({
@@ -175,6 +186,8 @@ export const updateCourse = async (req: Request, res: Response): Promise<void> =
     if (description !== undefined) updateData.description = String(description).trim();
     if (color !== undefined) updateData.color = color;
     if (semesterId !== undefined) updateData.semesterId = semesterId;
+    if (schedules !== undefined && Array.isArray(schedules)) updateData.schedules = schedules;
+    if (isArchived !== undefined) updateData.isArchived = Boolean(isArchived);
 
     const updatedCourse = await Course.findByIdAndUpdate(id, updateData, {
       new: true,
@@ -221,6 +234,7 @@ export const updateCourse = async (req: Request, res: Response): Promise<void> =
 export const deleteCourse = async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
+    const { force } = req.query;
 
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       res.status(400).json({
@@ -230,9 +244,8 @@ export const deleteCourse = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    const deletedCourse = await Course.findByIdAndDelete(id);
-
-    if (!deletedCourse) {
+    const course = await Course.findById(id);
+    if (!course) {
       res.status(404).json({
         success: false,
         message: 'Course not found',
@@ -240,10 +253,34 @@ export const deleteCourse = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
+    // Check if class instances / attendance history exist for this course
+    const classCount = await ClassInstance.countDocuments({ courseId: id });
+
+    if (classCount > 0 && force !== 'true') {
+      // Safe Archive strategy: Hide from active lists while preserving all class instance & attendance history
+      const archivedCourse = await Course.findByIdAndUpdate(
+        id,
+        { isArchived: true },
+        { new: true }
+      ).populate('semesterId', 'name year term isActive');
+
+      res.status(200).json({
+        success: true,
+        message: `Course has ${classCount} historical class occurrence(s). It has been safely archived to preserve attendance history.`,
+        data: archivedCourse,
+        archived: true,
+      });
+      return;
+    }
+
+    // If no class instances exist or force delete is explicitly requested
+    const deletedCourse = await Course.findByIdAndDelete(id);
+
     res.status(200).json({
       success: true,
-      message: 'Course deleted successfully',
+      message: 'Course permanently removed successfully',
       data: deletedCourse,
+      archived: false,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to delete course';

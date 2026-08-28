@@ -5,6 +5,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import app from '../app.js';
 import { Semester } from '../models/Semester.js';
 import { Course } from '../models/Course.js';
+import { ClassInstance } from '../models/ClassInstance.js';
 
 let mongoServer: MongoMemoryServer;
 
@@ -20,6 +21,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
+  await ClassInstance.deleteMany({});
   await Course.deleteMany({});
   await Semester.deleteMany({});
 });
@@ -111,7 +113,7 @@ describe('=== Semester API Endpoints ===', () => {
     expect(invalidRes.status).toBe(400);
   });
 
-  it('DELETE /api/semesters/:id - blocks deletion if courses exist', async () => {
+  it('DELETE /api/semesters/:id - safely archives semester if courses exist', async () => {
     const sem = await Semester.create({
       name: '2026 Fall',
       year: 2026,
@@ -129,8 +131,17 @@ describe('=== Semester API Endpoints ===', () => {
     });
 
     const deleteRes = await request(app).delete(`/api/semesters/${sem._id}`);
-    expect(deleteRes.status).toBe(400);
-    expect(deleteRes.body.message).toContain('Cannot delete semester because it contains');
+    expect(deleteRes.status).toBe(200);
+    expect(deleteRes.body.archived).toBe(true);
+    expect(deleteRes.body.message).toContain('safely archived to preserve historical data');
+
+    // Verify it is excluded from default active list
+    const listRes = await request(app).get('/api/semesters');
+    expect(listRes.body.count).toBe(0);
+
+    // Verify it appears when asking for archived
+    const archRes = await request(app).get('/api/semesters?archived=true');
+    expect(archRes.body.count).toBe(1);
   });
 });
 
@@ -149,7 +160,7 @@ describe('=== Course API Endpoints ===', () => {
     semesterId = sem._id.toString();
   });
 
-  it('POST /api/courses - creates a course in valid semester', async () => {
+  it('POST /api/courses - creates a course with initial schedules in valid semester', async () => {
     const res = await request(app)
       .post('/api/courses')
       .send({
@@ -158,11 +169,16 @@ describe('=== Course API Endpoints ===', () => {
         credit: 3.0,
         instructor: 'Dr. John Doe',
         semesterId,
+        schedules: [
+          { dayOfWeek: 'Sunday', startTime: '10:00', endTime: '11:30', room: 'Room 302' },
+          { dayOfWeek: 'Tuesday', startTime: '10:00', endTime: '11:30', room: 'Room 302' },
+        ],
       });
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
     expect(res.body.data.courseCode).toBe('CSE 221');
+    expect(res.body.data.schedules.length).toBe(2);
   });
 
   it('POST /api/courses - rejects when semester does not exist', async () => {
@@ -199,7 +215,7 @@ describe('=== Course API Endpoints ===', () => {
     expect(res.body.message).toContain('already exists in this semester');
   });
 
-  it('GET /api/courses - filters by semesterId', async () => {
+  it('GET /api/courses - filters by semesterId and excludes archived by default', async () => {
     const otherSem = await Semester.create({
       name: '2027 Spring',
       year: 2027,
@@ -212,12 +228,63 @@ describe('=== Course API Endpoints ===', () => {
     await Course.create([
       { courseCode: 'CSE 221', courseName: 'OOP', semesterId, credit: 3 },
       { courseCode: 'CSE 223', courseName: 'DBMS', semesterId, credit: 3 },
+      { courseCode: 'CSE 225', courseName: 'Networks', semesterId, credit: 3, isArchived: true },
       { courseCode: 'CSE 110', courseName: 'Intro', semesterId: otherSem._id, credit: 3 },
     ]);
 
+    // Active courses in this semester (excludes archived CSE 225)
     const res = await request(app).get(`/api/courses?semesterId=${semesterId}`);
     expect(res.status).toBe(200);
     expect(res.body.count).toBe(2);
+
+    // Query archived courses in this semester
+    const archRes = await request(app).get(`/api/courses?semesterId=${semesterId}&archived=true`);
+    expect(archRes.status).toBe(200);
+    expect(archRes.body.count).toBe(1);
+    expect(archRes.body.data[0].courseCode).toBe('CSE 225');
+  });
+
+  it('DELETE /api/courses/:id - permanently deletes if no class instances, but archives if history exists', async () => {
+    const courseWithoutClasses = await Course.create({
+      courseCode: 'CSE 101',
+      courseName: 'Intro',
+      semesterId,
+      credit: 3,
+    });
+
+    const courseWithClasses = await Course.create({
+      courseCode: 'CSE 201',
+      courseName: 'Data Structures',
+      semesterId,
+      credit: 3,
+    });
+
+    await ClassInstance.create({
+      courseId: courseWithClasses._id,
+      semesterId,
+      date: new Date('2026-09-06'),
+      dateString: '2026-09-06',
+      dayOfWeek: 'Sunday',
+      startTime: '10:00',
+      endTime: '11:30',
+      attendanceStatus: 'attended',
+    });
+
+    // Delete course without classes -> permanently deleted
+    const del1 = await request(app).delete(`/api/courses/${courseWithoutClasses._id}`);
+    expect(del1.status).toBe(200);
+    expect(del1.body.archived).toBe(false);
+    expect(del1.body.message).toContain('permanently removed');
+
+    // Delete course with classes -> safely archived to protect attendance history
+    const del2 = await request(app).delete(`/api/courses/${courseWithClasses._id}`);
+    expect(del2.status).toBe(200);
+    expect(del2.body.archived).toBe(true);
+    expect(del2.body.message).toContain('safely archived to preserve attendance history');
+
+    // Check that historical ClassInstance still exists intact!
+    const classCount = await ClassInstance.countDocuments({ courseId: courseWithClasses._id });
+    expect(classCount).toBe(1);
   });
 });
 

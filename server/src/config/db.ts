@@ -1,6 +1,15 @@
 import mongoose from 'mongoose';
+import dns from 'node:dns';
+
+// Ensure Node.js can resolve MongoDB Atlas SRV records on Windows/various networks
+try {
+  dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
+} catch {
+  // Ignore if custom DNS cannot be set
+}
 
 export type DBConnectionStatus = 'connected' | 'disconnected' | 'connecting' | 'error';
+
 
 let connectionStatus: DBConnectionStatus = 'disconnected';
 let connectionError: string | null = null;

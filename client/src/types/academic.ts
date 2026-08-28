@@ -17,6 +17,14 @@ export const DAYS_OF_WEEK: DayOfWeek[] = [
   'Saturday',
 ];
 
+export type AttendanceStatus = 'unmarked' | 'attended' | 'missed';
+
+export const ATTENDANCE_STATUSES: AttendanceStatus[] = [
+  'unmarked',
+  'attended',
+  'missed',
+];
+
 export interface ISchedule {
   _id?: string;
   dayOfWeek: DayOfWeek;
@@ -35,6 +43,7 @@ export interface ISemester {
   startDate: string;
   endDate: string;
   isActive: boolean;
+  isArchived?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -50,8 +59,59 @@ export interface ICourse {
   color?: string;
   semesterId: string | ISemester;
   schedules: ISchedule[];
+  isArchived?: boolean;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface IClassInstance {
+  _id: string;
+  id?: string;
+  courseId: ICourse | string;
+  semesterId: ISemester | string;
+  scheduleId?: string;
+  date: string;
+  dateString: string;
+  dayOfWeek: DayOfWeek;
+  startTime: string;
+  endTime: string;
+  room?: string;
+  type?: 'Lecture' | 'Lab' | 'Tutorial' | 'Seminar' | 'Other';
+  attendanceStatus: AttendanceStatus;
+  topic?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CourseAttendanceStats {
+  courseId: string;
+  courseCode: string;
+  courseName: string;
+  color: string;
+  total: number;
+  attended: number;
+  missed: number;
+  unmarked: number;
+  decided: number;
+  percentage: number;
+}
+
+export interface OverallAttendanceStats {
+  total: number;
+  attended: number;
+  missed: number;
+  unmarked: number;
+  decided: number;
+  percentage: number;
+  courses: CourseAttendanceStats[];
+}
+
+export interface ClassGenerationResult {
+  totalCandidates: number;
+  created: number;
+  skipped: number;
+  semesterId: string;
+  semesterName?: string;
 }
 
 export interface ApiResponse<T> {

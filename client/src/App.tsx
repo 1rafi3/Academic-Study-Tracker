@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SemesterManager } from './components/SemesterManager.js';
 import { CourseManager } from './components/CourseManager.js';
 import { ScheduleManager } from './components/ScheduleManager.js';
+import { ClassInstanceManager } from './components/ClassInstanceManager.js';
 import { 
   Activity, 
   Database, 
@@ -11,9 +12,9 @@ import {
   RefreshCw, 
   Layers, 
   GraduationCap,
-  BookOpen
+  BookOpen,
+  CalendarCheck
 } from 'lucide-react';
-
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,7 +41,7 @@ interface HealthResponse {
 }
 
 function MainDashboard() {
-  const [activeTab, setActiveTab] = useState<'academic' | 'health'>('academic');
+  const [activeTab, setActiveTab] = useState<'classes' | 'academic' | 'health'>('classes');
   const [selectedSemesterId, setSelectedSemesterId] = useState<string | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
@@ -107,17 +108,29 @@ function MainDashboard() {
                   Academic Study Tracker
                 </h1>
                 <span className="px-2 py-0.5 rounded-full bg-indigo-950 border border-indigo-700/50 text-indigo-300 text-[10px] font-semibold uppercase tracking-wider">
-                  Phase 2
+                  Phase 3
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Semester &bull; Course &bull; Weekly Recurring Schedule Foundation
+                Class Instances &bull; Attendance Tracking &bull; Academic Schedule Engine
               </p>
             </div>
           </div>
 
           {/* Tab Navigation */}
           <div className="flex items-center p-1 rounded-xl bg-slate-900 border border-slate-800">
+            <button
+              id="tab-classes-btn"
+              onClick={() => setActiveTab('classes')}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                activeTab === 'classes'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <CalendarCheck className="w-3.5 h-3.5" />
+              Classes & Attendance
+            </button>
             <button
               id="tab-academic-btn"
               onClick={() => setActiveTab('academic')}
@@ -128,7 +141,7 @@ function MainDashboard() {
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" />
-              Academic Data
+              Academic Setup
             </button>
             <button
               id="tab-health-btn"
@@ -145,27 +158,19 @@ function MainDashboard() {
           </div>
         </header>
 
-        {/* Tab 1: Academic Data Workspace */}
+        {/* Tab 1: Class Instances & Attendance Tracking */}
+        {activeTab === 'classes' && (
+          <main className="space-y-6">
+            <ClassInstanceManager
+              selectedSemesterId={selectedSemesterId}
+              onSelectSemester={handleSelectSemester}
+            />
+          </main>
+        )}
+
+        {/* Tab 2: Academic Setup (Semesters, Courses, Schedules) */}
         {activeTab === 'academic' && (
           <main className="space-y-6">
-            {/* Database status banner if disconnected */}
-            {healthData?.database.status !== 'connected' && (
-              <div className="p-3.5 rounded-xl bg-amber-950/40 border border-amber-800/60 flex items-center justify-between gap-3 text-xs text-amber-200">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                  <span>
-                    MongoDB is currently on <strong>Standby / Unconnected</strong>. Configure <code className="bg-amber-950 px-1 py-0.5 rounded text-amber-100">server/.env</code> with your <code className="bg-amber-950 px-1 py-0.5 rounded text-amber-100">MONGODB_URI</code> to persist academic records to your MongoDB database.
-                  </span>
-                </div>
-                <button
-                  onClick={fetchHealth}
-                  className="shrink-0 px-2.5 py-1 rounded bg-amber-900/60 hover:bg-amber-900 border border-amber-700/50 text-amber-200 text-[11px] font-medium transition cursor-pointer"
-                >
-                  Retry Connection
-                </button>
-              </div>
-            )}
-
             {/* Hierarchy Guide */}
             <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-900/60 border border-slate-800/60 text-xs text-slate-300">
               <Layers className="w-4 h-4 text-indigo-400 shrink-0" />
@@ -177,7 +182,7 @@ function MainDashboard() {
                 <span className="text-slate-500">&rarr;</span>
                 <span className="px-2 py-0.5 rounded bg-slate-800 text-indigo-300 font-medium">3. Weekly Schedule</span>
                 <span className="text-slate-500">&rarr;</span>
-                <span className="text-slate-500 italic">4. Class Instances (Phase 3)</span>
+                <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-medium border border-emerald-800/50">4. Class Instances (Phase 3 Active)</span>
               </div>
             </div>
 
@@ -205,7 +210,7 @@ function MainDashboard() {
           </main>
         )}
 
-        {/* Tab 2: System Health Diagnostics */}
+        {/* Tab 3: System Health Diagnostics */}
         {activeTab === 'health' && (
           <main className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -267,7 +272,7 @@ function MainDashboard() {
                   </div>
                   <p className="text-xs text-slate-500 mt-1">
                     {healthData?.database.status === 'connected'
-                      ? `DB: ${healthData.database.database || 'academic_tracker'}`
+                      ? `Host: ${healthData.database.host || 'MongoDB Atlas'}`
                       : 'Requires MONGODB_URI'}
                   </p>
                 </div>
@@ -317,7 +322,7 @@ function MainDashboard() {
 
         {/* Footer */}
         <footer className="text-center text-xs text-slate-600 pt-4 border-t border-slate-800/40">
-          Academic Study Tracker &bull; Phase 2: Semester & Course Data Foundation
+          Academic Study Tracker &bull; Phase 3: Class Instance Generation & Attendance Foundation
         </footer>
       </div>
     </div>

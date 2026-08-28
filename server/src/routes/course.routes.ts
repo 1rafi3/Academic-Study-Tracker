@@ -22,6 +22,7 @@ router.route('/')
 
 router.route('/:id')
   .get(getCourseById)
+  .put(updateCourse)
   .patch(updateCourse)
   .delete(deleteCourse);
 
@@ -31,6 +32,7 @@ router.route('/:courseId/schedules')
   .post(addSchedule);
 
 router.route('/:courseId/schedules/:scheduleId')
+  .put(updateSchedule)
   .patch(updateSchedule)
   .delete(deleteSchedule);
 

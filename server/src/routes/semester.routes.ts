@@ -15,6 +15,7 @@ router.route('/')
 
 router.route('/:id')
   .get(getSemesterById)
+  .put(updateSemester)
   .patch(updateSemester)
   .delete(deleteSemester);
 

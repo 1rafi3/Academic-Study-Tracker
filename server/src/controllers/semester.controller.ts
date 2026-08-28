@@ -2,10 +2,11 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { Semester } from '../models/Semester.js';
 import { Course } from '../models/Course.js';
+import { ClassInstance } from '../models/ClassInstance.js';
 
 export const createSemester = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, year, term, startDate, endDate, isActive } = req.body;
+    const { name, year, term, startDate, endDate, isActive, isArchived } = req.body;
 
     if (!name || !year || !term || !startDate || !endDate) {
       res.status(400).json({
@@ -29,12 +30,13 @@ export const createSemester = async (req: Request, res: Response): Promise<void>
     }
 
     const semester = await Semester.create({
-      name,
+      name: String(name).trim(),
       year: Number(year),
       term,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
       isActive: Boolean(isActive),
+      isArchived: Boolean(isArchived),
     });
 
     res.status(201).json({
@@ -59,11 +61,19 @@ export const createSemester = async (req: Request, res: Response): Promise<void>
 
 export const getSemesters = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { active } = req.query;
+    const { active, archived, all } = req.query;
     const filter: Record<string, unknown> = {};
 
     if (active === 'true') {
       filter.isActive = true;
+    }
+
+    if (all !== 'true') {
+      if (archived === 'true') {
+        filter.isArchived = true;
+      } else {
+        filter.isArchived = { $ne: true };
+      }
     }
 
     const semesters = await Semester.find(filter).sort({ year: -1, startDate: -1 });
@@ -114,7 +124,7 @@ export const getSemesterById = async (req: Request, res: Response): Promise<void
 export const updateSemester = async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
-    const { name, year, term, startDate, endDate, isActive } = req.body;
+    const { name, year, term, startDate, endDate, isActive, isArchived } = req.body;
 
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       res.status(400).json({
@@ -137,12 +147,13 @@ export const updateSemester = async (req: Request, res: Response): Promise<void>
     }
 
     const updateData: Record<string, unknown> = {};
-    if (name !== undefined) updateData.name = name;
+    if (name !== undefined) updateData.name = String(name).trim();
     if (year !== undefined) updateData.year = Number(year);
     if (term !== undefined) updateData.term = term;
     if (startDate !== undefined) updateData.startDate = new Date(startDate);
     if (endDate !== undefined) updateData.endDate = new Date(endDate);
     if (isActive !== undefined) updateData.isActive = Boolean(isActive);
+    if (isArchived !== undefined) updateData.isArchived = Boolean(isArchived);
 
     const updatedSemester = await Semester.findByIdAndUpdate(id, updateData, {
       new: true,
@@ -180,6 +191,7 @@ export const updateSemester = async (req: Request, res: Response): Promise<void>
 export const deleteSemester = async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
+    const { force, archive } = req.query;
 
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       res.status(400).json({
@@ -189,19 +201,8 @@ export const deleteSemester = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Safety check: Prevent deletion if courses exist for this semester
-    const courseCount = await Course.countDocuments({ semesterId: id });
-    if (courseCount > 0) {
-      res.status(400).json({
-        success: false,
-        message: `Cannot delete semester because it contains ${courseCount} course(s). Please remove all courses in this semester first.`,
-      });
-      return;
-    }
-
-    const deletedSemester = await Semester.findByIdAndDelete(id);
-
-    if (!deletedSemester) {
+    const semester = await Semester.findById(id);
+    if (!semester) {
       res.status(404).json({
         success: false,
         message: 'Semester not found',
@@ -209,10 +210,34 @@ export const deleteSemester = async (req: Request, res: Response): Promise<void>
       return;
     }
 
+    // Check if courses or class instances exist for this semester
+    const courseCount = await Course.countDocuments({ semesterId: id });
+    const classCount = await ClassInstance.countDocuments({ semesterId: id });
+
+    // If archiving requested or courses exist and not forced
+    if (archive === 'true' || (courseCount > 0 && force !== 'true')) {
+      const archivedSemester = await Semester.findByIdAndUpdate(
+        id,
+        { isArchived: true, isActive: false },
+        { new: true }
+      );
+
+      res.status(200).json({
+        success: true,
+        message: `Semester contains ${courseCount} course(s) and ${classCount} class instance(s). It has been safely archived to preserve historical data.`,
+        data: archivedSemester,
+        archived: true,
+      });
+      return;
+    }
+
+    const deletedSemester = await Semester.findByIdAndDelete(id);
+
     res.status(200).json({
       success: true,
       message: 'Semester deleted successfully',
       data: deletedSemester,
+      archived: false,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to delete semester';

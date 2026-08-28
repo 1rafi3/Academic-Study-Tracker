@@ -19,6 +19,14 @@ export const DAYS_OF_WEEK: DayOfWeek[] = [
   'Saturday',
 ];
 
+export type AttendanceStatus = 'unmarked' | 'attended' | 'missed';
+
+export const ATTENDANCE_STATUSES: AttendanceStatus[] = [
+  'unmarked',
+  'attended',
+  'missed',
+];
+
 export interface ISchedule {
   _id?: Types.ObjectId | string;
   dayOfWeek: DayOfWeek;
@@ -35,6 +43,7 @@ export interface ISemester {
   startDate: Date;
   endDate: Date;
   isActive: boolean;
+  isArchived?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -50,6 +59,7 @@ export interface ICourse {
   color?: string;     // e.g. "#6366f1"
   semesterId: Types.ObjectId | string;
   schedules: ISchedule[];
+  isArchived?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -58,9 +68,52 @@ export interface ICourseDocument extends Omit<ICourse, 'schedules'>, Document {
   schedules: Types.DocumentArray<ISchedule & Document>;
 }
 
+export interface IClassInstance {
+  courseId: Types.ObjectId | string;
+  semesterId: Types.ObjectId | string;
+  scheduleId?: Types.ObjectId | string;
+  date: Date;          // UTC midnight Date
+  dateString: string;  // "YYYY-MM-DD"
+  dayOfWeek: DayOfWeek;
+  startTime: string;   // "HH:mm"
+  endTime: string;     // "HH:mm"
+  room?: string;
+  type?: 'Lecture' | 'Lab' | 'Tutorial' | 'Seminar' | 'Other';
+  attendanceStatus: AttendanceStatus;
+  topic?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IClassInstanceDocument extends IClassInstance, Document {}
+
+export interface CourseAttendanceStats {
+  courseId: string;
+  courseCode: string;
+  courseName: string;
+  color: string;
+  total: number;
+  attended: number;
+  missed: number;
+  unmarked: number;
+  decided: number;     // attended + missed
+  percentage: number;  // (attended / decided) * 100, 0 if decided == 0
+}
+
+export interface OverallAttendanceStats {
+  total: number;
+  attended: number;
+  missed: number;
+  unmarked: number;
+  decided: number;
+  percentage: number;
+  courses: CourseAttendanceStats[];
+}
+
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;
   data?: T;
+  count?: number;
   errors?: string[];
 }

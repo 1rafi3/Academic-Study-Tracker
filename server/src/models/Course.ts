@@ -96,6 +96,10 @@ const courseSchema = new Schema<ICourseDocument>(
       type: [scheduleSchema],
       default: [],
     },
+    isArchived: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
@@ -111,5 +115,6 @@ const courseSchema = new Schema<ICourseDocument>(
 
 // Compound index: A course code is unique WITHIN a semester, but reusable across different semesters
 courseSchema.index({ semesterId: 1, courseCode: 1 }, { unique: true });
+courseSchema.index({ semesterId: 1, isArchived: 1 });
 
 export const Course = model<ICourseDocument>('Course', courseSchema);

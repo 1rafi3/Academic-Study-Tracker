@@ -3,6 +3,7 @@ import cors from 'cors';
 import healthRoutes from './routes/health.routes.js';
 import semesterRoutes from './routes/semester.routes.js';
 import courseRoutes from './routes/course.routes.js';
+import classInstanceRoutes from './routes/classInstance.routes.js';
 
 const app: Express = express();
 
@@ -34,6 +35,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api', healthRoutes);
 app.use('/api/semesters', semesterRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/class-instances', classInstanceRoutes);
+
 
 
 // Root fallback
