@@ -215,10 +215,79 @@ export interface ClassGenerationResult {
   semesterName?: string;
 }
 
+export interface IBackupPayload {
+  backupVersion: number;
+  application: string;
+  createdAt: string;
+  data: {
+    semesters: ISemester[];
+    courses: ICourse[];
+    classInstances: IClassInstance[];
+    academicEvents: IAcademicEvent[];
+  };
+}
+
+export interface IBackupValidationResult {
+  isValid: boolean;
+  errors: string[];
+  preview?: {
+    createdAt: string;
+    counts: {
+      semesters: { total: number; toInsert: number; toSkip: number };
+      courses: { total: number; toInsert: number; toSkip: number };
+      classInstances: { total: number };
+      academicEvents: { total: number };
+    };
+  };
+}
+
+export interface ISemesterSummaryReport {
+  semester: ISemester;
+  targetPercentage: number;
+  overall: {
+    totalClasses: number;
+    attended: number;
+    missed: number;
+    decided: number;
+    percentage: number;
+    status: AttendanceRiskStatus;
+    canBunk: number;
+    needToAttend: number;
+    lecturesWithNotes: number;
+    homeworkCount: number;
+  };
+  courses: Array<{
+    courseId: string;
+    courseCode: string;
+    courseName: string;
+    credit: number;
+    instructor: string;
+    color: string;
+    total: number;
+    attended: number;
+    missed: number;
+    cancelled: number;
+    holiday: number;
+    unmarked: number;
+    decided: number;
+    percentage: number;
+    status: AttendanceRiskStatus;
+    canBunk: number;
+    needToAttend: number;
+    topicsCovered: string[];
+    lecturesWithNotes: number;
+    homeworkAssigned: number;
+  }>;
+  events: IAcademicEvent[];
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   message?: string;
   data?: T;
   count?: number;
   errors?: string[];
+  isValid?: boolean;
+  preview?: any;
 }
+

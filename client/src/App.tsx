@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CalendarDashboard } from './components/CalendarDashboard.js';
 import { CourseNotesTimeline } from './components/CourseNotesTimeline.js';
 import { AttendanceAnalytics } from './components/AttendanceAnalytics.js';
+import { BackupData } from './components/BackupData.js';
 import { SemesterManager } from './components/SemesterManager.js';
 import { CourseManager } from './components/CourseManager.js';
 import { ScheduleManager } from './components/ScheduleManager.js';
@@ -47,7 +48,7 @@ interface HealthResponse {
 }
 
 function MainDashboard() {
-  const [activeTab, setActiveTab] = useState<'calendar' | 'notes' | 'analytics' | 'classes' | 'academic' | 'health'>('calendar');
+  const [activeTab, setActiveTab] = useState<'calendar' | 'notes' | 'analytics' | 'classes' | 'academic' | 'backup' | 'health'>('calendar');
   const [selectedSemesterId, setSelectedSemesterId] = useState<string | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
@@ -114,11 +115,11 @@ function MainDashboard() {
                   Academic Study Tracker
                 </h1>
                 <span className="px-2 py-0.5 rounded-full bg-indigo-950 border border-indigo-700/50 text-indigo-300 text-[10px] font-semibold uppercase tracking-wider">
-                  Phase 7
+                  Phase 8
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Academic Calendar &bull; Study Notes &bull; Attendance Analytics &bull; Schedule
+                Calendar &bull; Study Notes &bull; Analytics &bull; Schedule &bull; Backup & Exports
               </p>
             </div>
           </div>
@@ -159,7 +160,19 @@ function MainDashboard() {
               }`}
             >
               <Target className="w-3.5 h-3.5" />
-              Analytics & Targets
+              Analytics
+            </button>
+            <button
+              id="tab-backup-btn"
+              onClick={() => setActiveTab('backup')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                activeTab === 'backup'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Database className="w-3.5 h-3.5" />
+              Backup & Data
             </button>
             <button
               id="tab-classes-btn"
@@ -236,7 +249,17 @@ function MainDashboard() {
           </main>
         )}
 
-        {/* Tab 3: Class Instances & Attendance Tracking */}
+        {/* Tab 4: Backup, Restore, CSV Exports & Reports (Phase 8) */}
+        {activeTab === 'backup' && (
+          <main className="space-y-6">
+            <BackupData
+              selectedSemesterId={selectedSemesterId}
+              onSelectSemester={handleSelectSemester}
+            />
+          </main>
+        )}
+
+        {/* Tab 5: Class Instances & Attendance Tracking */}
         {activeTab === 'classes' && (
           <main className="space-y-6">
             <ClassInstanceManager

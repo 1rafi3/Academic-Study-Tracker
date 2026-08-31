@@ -10,6 +10,9 @@ import type {
   IBangladeshHoliday,
   OverallAttendanceStats,
   AttendanceAnalyticsResponse,
+  IBackupPayload,
+  IBackupValidationResult,
+  ISemesterSummaryReport,
   ClassGenerationResult,
   ApiResponse,
 } from '../types/academic.js';
@@ -355,6 +358,83 @@ export const analyticsApi = {
     const url = queryString ? `${API_BASE}/analytics/attendance?${queryString}` : `${API_BASE}/analytics/attendance`;
     const res = await fetch(url);
     return handleResponse<AttendanceAnalyticsResponse>(res);
+  },
+};
+
+export const backupApi = {
+  async exportJson(): Promise<IBackupPayload> {
+    const res = await fetch(`${API_BASE}/backup/export`);
+    return handleResponse<IBackupPayload>(res);
+  },
+
+  async validateBackup(payload: IBackupPayload): Promise<IBackupValidationResult> {
+    const res = await fetch(`${API_BASE}/backup/validate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const json: ApiResponse<unknown> = await res.json();
+    return {
+      isValid: Boolean(json.isValid),
+      errors: json.errors || (json.message ? [json.message] : []),
+      preview: json.preview,
+    };
+  },
+
+  async importBackup(data: {
+    backup: IBackupPayload;
+    mode: 'add_missing' | 'replace_semester';
+    targetSemesterId?: string;
+  }): Promise<{
+    semesters: { inserted: number; skipped: number };
+    courses: { inserted: number; skipped: number };
+    classInstances: { inserted: number; skipped: number };
+    academicEvents: { inserted: number; skipped: number };
+  }> {
+    const res = await fetch(`${API_BASE}/backup/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<{
+      semesters: { inserted: number; skipped: number };
+      courses: { inserted: number; skipped: number };
+      classInstances: { inserted: number; skipped: number };
+      academicEvents: { inserted: number; skipped: number };
+    }>(res);
+  },
+
+  getAttendanceCsvUrl(semesterId?: string, courseId?: string): string {
+    const query = new URLSearchParams();
+    if (semesterId) query.set('semesterId', semesterId);
+    if (courseId) query.set('courseId', courseId);
+    const queryString = query.toString();
+    return queryString ? `${API_BASE}/backup/export/csv/attendance?${queryString}` : `${API_BASE}/backup/export/csv/attendance`;
+  },
+
+  getCoursesCsvUrl(semesterId?: string): string {
+    const query = new URLSearchParams();
+    if (semesterId) query.set('semesterId', semesterId);
+    const queryString = query.toString();
+    return queryString ? `${API_BASE}/backup/export/csv/courses?${queryString}` : `${API_BASE}/backup/export/csv/courses`;
+  },
+
+  getEventsCsvUrl(semesterId?: string): string {
+    const query = new URLSearchParams();
+    if (semesterId) query.set('semesterId', semesterId);
+    const queryString = query.toString();
+    return queryString ? `${API_BASE}/backup/export/csv/events?${queryString}` : `${API_BASE}/backup/export/csv/events`;
+  },
+
+  async getSemesterSummary(semesterId: string, target?: number): Promise<ISemesterSummaryReport> {
+    const query = new URLSearchParams();
+    if (target !== undefined) query.set('target', String(target));
+    const queryString = query.toString();
+    const url = queryString
+      ? `${API_BASE}/backup/summary/${semesterId}?${queryString}`
+      : `${API_BASE}/backup/summary/${semesterId}`;
+    const res = await fetch(url);
+    return handleResponse<ISemesterSummaryReport>(res);
   },
 };
 
