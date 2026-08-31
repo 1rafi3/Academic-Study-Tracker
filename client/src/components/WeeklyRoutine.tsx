@@ -105,7 +105,7 @@ export const WeeklyRoutine: React.FC<Props> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 print:space-y-0 print:m-0 print:p-0">
       {/* Top Header Controls (Hidden on print) */}
       <div className="p-5 rounded-none bg-slate-900 border border-slate-800 shadow-xl backdrop-blur-md flex flex-wrap items-center justify-between gap-4 print:hidden">
         <div className="space-y-0.5">
@@ -114,7 +114,7 @@ export const WeeklyRoutine: React.FC<Props> = ({
             Weekly Class Routine & Timetable
           </h2>
           <p className="text-xs text-slate-400">
-            Beautiful colored timetable grid with 1-click PDF export and watermark.
+            Beautiful single-page colored routine with 1-click PDF download.
           </p>
         </div>
 
@@ -269,25 +269,8 @@ export const WeeklyRoutine: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Main Timetable Card (Optimized for Screen & High-Resolution Colored PDF Print) */}
-      <div className="p-4 sm:p-6 rounded-none bg-slate-900 border border-slate-800 shadow-2xl backdrop-blur-md space-y-4 print:p-2 print:border-none print:shadow-none print:bg-white print:text-slate-900">
-        {/* Printable Header (Visible ONLY during print / PDF download) */}
-        <div className="hidden print:block border-b-2 border-slate-900 pb-2 mb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-black uppercase tracking-wider text-slate-950">
-                {activeSemester?.name || 'Academic'} Weekly Routine
-              </h1>
-              <p className="text-xs text-slate-700 font-bold">
-                {activeSemester?.year} {activeSemester?.term} Semester
-              </p>
-            </div>
-            <div className="text-right text-[10px] text-slate-500 font-medium">
-              Academic Study Tracker
-            </div>
-          </div>
-        </div>
-
+      {/* Main Timetable Card (Guaranteed Single-Page Landscape PDF Output) */}
+      <div className="p-4 sm:p-6 rounded-none bg-slate-900 border border-slate-800 shadow-2xl backdrop-blur-md space-y-4 print:p-0 print:border-none print:shadow-none print:bg-white print:text-slate-900 print:space-y-1">
         {/* Empty State: No Courses or Schedules */}
         {coursesLoading ? (
           <div className="p-16 text-center text-xs text-slate-400">Loading routine schedules...</div>
@@ -311,14 +294,14 @@ export const WeeklyRoutine: React.FC<Props> = ({
           </div>
         ) : (
           /* ============================================================ */
-          /* BEAUTIFULLY COLORED TIMETABLE GRID MATRIX                    */
+          /* PURE BEAUTIFULLY COLORED TIMETABLE GRID MATRIX               */
           /* ============================================================ */
           <div className="overflow-x-auto rounded-none p-1 print:p-0">
-            <div className="min-w-[960px] print:min-w-full space-y-2.5">
+            <div className="min-w-[960px] print:min-w-full space-y-2 print:space-y-1.5">
               {/* Table Headers: Weekdays */}
-              <div className="grid grid-cols-8 gap-2.5 text-center text-xs font-black">
+              <div className="grid grid-cols-8 gap-2 print:gap-1.5 text-center text-xs font-black">
                 {/* Time Column Header */}
-                <div className="py-2.5 px-2 bg-slate-950 print:bg-slate-900 border border-slate-800 print:border-slate-900 text-slate-300 print:text-white uppercase tracking-wider font-mono shadow-xs">
+                <div className="py-2.5 print:py-1.5 px-2 bg-slate-950 print:bg-slate-900 border border-slate-800 print:border-slate-900 text-slate-300 print:text-white uppercase tracking-wider font-mono shadow-xs">
                   Time
                 </div>
 
@@ -328,7 +311,7 @@ export const WeeklyRoutine: React.FC<Props> = ({
                   return (
                     <div
                       key={day}
-                      className={`py-2.5 px-2 uppercase tracking-wider border font-black transition shadow-xs ${
+                      className={`py-2.5 print:py-1.5 px-2 uppercase tracking-wider border font-black transition shadow-xs ${
                         isToday
                           ? 'bg-indigo-950 print:bg-indigo-900 border-indigo-500 print:border-indigo-900 text-indigo-200 print:text-white'
                           : 'bg-slate-950 print:bg-slate-900 border-slate-800 print:border-slate-900 text-slate-200 print:text-white'
@@ -352,9 +335,13 @@ export const WeeklyRoutine: React.FC<Props> = ({
                 const timeLabel = is12Hour ? slot.label12 : slot.label24;
 
                 return (
-                  <div key={slot.slotKey} className="grid grid-cols-8 gap-2.5 items-stretch">
+                  <div
+                    key={slot.slotKey}
+                    className="grid grid-cols-8 gap-2 print:gap-1.5 items-stretch"
+                    style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}
+                  >
                     {/* Far Left Time Box (Dark high-contrast rectangle) */}
-                    <div className="p-3 bg-slate-950 print:bg-slate-900 border-2 border-slate-800 print:border-slate-900 text-slate-100 print:text-white flex items-center justify-center text-center font-black text-xs tracking-tight rounded-none shadow-md font-mono">
+                    <div className="p-2.5 print:p-1.5 bg-slate-950 print:bg-slate-900 border-2 border-slate-800 print:border-slate-900 text-slate-100 print:text-white flex items-center justify-center text-center font-black text-xs tracking-tight rounded-none shadow-md font-mono">
                       <span>{timeLabel}</span>
                     </div>
 
@@ -367,12 +354,12 @@ export const WeeklyRoutine: React.FC<Props> = ({
                         <div key={day} className="flex flex-col">
                           {classesInSlot.length === 0 ? (
                             /* Empty Cell Placeholder */
-                            <div className="p-3 flex-1 min-h-[76px] bg-slate-950/30 print:bg-slate-50 border-2 border-dashed border-slate-800/40 print:border-slate-300 rounded-none flex items-center justify-center">
+                            <div className="p-2.5 print:p-1.5 flex-1 min-h-[70px] print:min-h-[50px] bg-slate-950/30 print:bg-slate-50 border-2 border-dashed border-slate-800/40 print:border-slate-300 rounded-none flex items-center justify-center">
                               <span className="text-[10px] text-slate-700/30 print:text-slate-300 select-none">&mdash;</span>
                             </div>
                           ) : (
                             /* Active Class Card(s) with rich vibrant colors */
-                            <div className="space-y-2 flex-1 flex flex-col">
+                            <div className="space-y-1.5 flex-1 flex flex-col">
                               {classesInSlot.map((cls, cIdx) => {
                                 const courseColor = cls.color || '#6366f1';
 
@@ -410,7 +397,7 @@ export const WeeklyRoutine: React.FC<Props> = ({
                                 return (
                                   <div
                                     key={`${cls.courseId}-${cls.scheduleId}-${cIdx}`}
-                                    className="p-2.5 flex-1 min-h-[76px] flex flex-col justify-center items-center text-center rounded-none border-2 shadow-sm transition-all duration-150 relative overflow-hidden print:border-2"
+                                    className="p-2 print:p-1 flex-1 min-h-[70px] print:min-h-[50px] flex flex-col justify-center items-center text-center rounded-none border-2 shadow-sm transition-all duration-150 relative overflow-hidden print:border-2"
                                     style={{
                                       backgroundColor: currentBg,
                                       borderColor: currentBorder,
@@ -428,11 +415,6 @@ export const WeeklyRoutine: React.FC<Props> = ({
                                     {/* Course Code (e.g. OOP, EE&CL, CSE 221) */}
                                     <div
                                       className="font-black text-xs uppercase tracking-wide leading-tight print:text-black"
-                                      style={
-                                        colorTheme === 'vibrant'
-                                          ? { color: undefined }
-                                          : undefined
-                                      }
                                     >
                                       {cls.courseCode}
                                     </div>
@@ -446,7 +428,7 @@ export const WeeklyRoutine: React.FC<Props> = ({
 
                                     {/* Room & Instructor in parenthesis (e.g. 506 (GMN)) */}
                                     {(showRoom || showInstructor) && (cls.room || cls.instructor) && (
-                                      <div className="text-[11px] font-bold opacity-90 mt-1 leading-tight print:text-slate-800">
+                                      <div className="text-[11px] print:text-[10px] font-bold opacity-90 mt-0.5 leading-tight print:text-slate-800">
                                         {showRoom && cls.room ? cls.room : ''}
                                         {showInstructor && cls.instructor
                                           ? ` (${cls.instructor})`
@@ -468,12 +450,9 @@ export const WeeklyRoutine: React.FC<Props> = ({
           </div>
         )}
 
-        {/* Minimal Bottom Watermark (Visible on both Screen and Printed PDF) */}
-        <div className="pt-4 border-t border-slate-800/80 print:border-slate-300 flex items-center justify-between text-[10px] text-slate-500 print:text-slate-600 font-mono select-none">
-          <span className="opacity-70">
-            {activeSemester?.name ? `${activeSemester.name} Timetable` : 'Academic Timetable'}
-          </span>
-          <span className="font-bold tracking-wider uppercase text-slate-400 print:text-slate-700 opacity-90">
+        {/* Minimal Bottom Watermark (Only reference watermark at the bottom) */}
+        <div className="pt-2 print:pt-1.5 border-t border-slate-800/80 print:border-slate-300 flex items-center justify-end text-[10px] text-slate-500 print:text-slate-600 font-mono select-none">
+          <span className="font-bold tracking-widest uppercase text-slate-400 print:text-slate-700 opacity-90">
             MD SHEIK RAFIWOL KARIM RAFI
           </span>
         </div>

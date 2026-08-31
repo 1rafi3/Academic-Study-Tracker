@@ -97,16 +97,16 @@ function MainDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center p-4 md:p-8 selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center p-4 md:p-8 selection:bg-indigo-500/30 selection:text-indigo-200 print:p-0 print:m-0 print:bg-white print:min-h-0">
       {/* Background glow accents */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 print:hidden">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 right-1/4 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="w-full max-w-5xl relative z-10 space-y-6">
-        {/* Top Navbar */}
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+      <div className="w-full max-w-5xl relative z-10 space-y-6 print:max-w-full print:space-y-0 print:m-0 print:p-0">
+        {/* Top Navbar (Hidden on print) */}
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4 print:hidden">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-indigo-950/80 border border-indigo-700/60 text-indigo-400">
               <GraduationCap className="w-6 h-6" />
@@ -440,7 +440,7 @@ function MainDashboard() {
         )}
 
         {/* Footer */}
-        <footer className="border-t border-slate-800/80 pt-4 text-center text-xs text-slate-500">
+        <footer className="border-t border-slate-800/80 pt-4 text-center text-xs text-slate-500 print:hidden">
           <p>Academic Study Tracker &bull; Phase 5 &bull; Built with React, Vite, Node.js, Express & MongoDB Atlas</p>
         </footer>
       </div>
