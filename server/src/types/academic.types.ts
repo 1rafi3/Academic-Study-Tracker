@@ -81,6 +81,9 @@ export interface IClassInstance {
   type?: 'Lecture' | 'Lab' | 'Tutorial' | 'Seminar' | 'Other';
   attendanceStatus: AttendanceStatus;
   topic?: string;
+  notes?: string;
+  hasHomework?: boolean;
+  homeworkDetails?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }

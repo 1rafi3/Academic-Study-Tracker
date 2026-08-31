@@ -7,6 +7,7 @@ import type {
   IClassInstance,
   AttendanceStatus,
 } from '../types/academic.js';
+import { ClassNotesModal } from './ClassNotesModal.js';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -21,6 +22,10 @@ import {
   Sparkles,
   CalendarCheck,
   ArrowRight,
+  BookOpen,
+  CheckSquare,
+  Edit3,
+  FileText,
 } from 'lucide-react';
 
 interface Props {
@@ -79,6 +84,9 @@ export const CalendarDashboard: React.FC<Props> = ({
 
   // Selected calendar date (default to today)
   const [selectedDate, setSelectedDate] = useState<string>(todayString);
+
+  // Notes Modal state
+  const [editingNotesInstance, setEditingNotesInstance] = useState<IClassInstance | null>(null);
 
   // Fetch Semesters
   const { data: semesters = [], isLoading: semestersLoading } = useQuery<ISemester[]>({
@@ -715,12 +723,49 @@ export const CalendarDashboard: React.FC<Props> = ({
                             </span>
                           )}
                         </div>
+
+                        {/* Lecture Topic / Notes / Homework Preview */}
+                        {(cls.topic || cls.notes || cls.hasHomework) && (
+                          <div className="pt-2 border-t border-slate-900/80 space-y-1 text-xs">
+                            {cls.topic && (
+                              <div className="flex items-center gap-1.5 text-indigo-300 font-semibold">
+                                <BookOpen className="w-3 h-3 text-indigo-400 shrink-0" />
+                                <span className="truncate">Topic: {cls.topic}</span>
+                              </div>
+                            )}
+                            {cls.notes && !cls.topic && (
+                              <div className="flex items-center gap-1.5 text-slate-400">
+                                <FileText className="w-3 h-3 text-slate-500 shrink-0" />
+                                <span className="truncate italic">Notes recorded</span>
+                              </div>
+                            )}
+                            {cls.hasHomework && (
+                              <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-800/60 text-amber-300 text-[10px] font-medium">
+                                <CheckSquare className="w-3 h-3 shrink-0" />
+                                Homework Assigned
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
-                      {/* Interactive Attendance Action Buttons */}
-                      <div className="pl-1 pt-2 border-t border-slate-900 flex items-center justify-between gap-1.5">
-                        <span className="text-[10px] text-slate-500 font-medium">Attendance:</span>
+                      {/* Interactive Attendance & Notes Action Buttons */}
+                      <div className="pl-1 pt-2 border-t border-slate-900 flex flex-wrap items-center justify-between gap-2">
+                        {/* Notes Action Button */}
+                        <button
+                          type="button"
+                          onClick={() => setEditingNotesInstance(cls)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                            cls.topic || cls.notes
+                              ? 'bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60'
+                              : 'bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800'
+                          }`}
+                        >
+                          <Edit3 className="w-3 h-3" />
+                          {cls.topic || cls.notes ? 'Edit Notes' : '+ Add Notes'}
+                        </button>
 
+                        {/* Attendance Toggles */}
                         <div className="flex items-center gap-1.5">
                           <button
                             type="button"
@@ -853,6 +898,13 @@ export const CalendarDashboard: React.FC<Props> = ({
           </div>
         </div>
       </div>
+
+      {/* Class Notes Modal */}
+      <ClassNotesModal
+        instance={editingNotesInstance}
+        isOpen={Boolean(editingNotesInstance)}
+        onClose={() => setEditingNotesInstance(null)}
+      />
     </div>
   );
 };

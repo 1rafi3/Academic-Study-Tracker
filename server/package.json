@@ -2,6 +2,7 @@
   "name": "academic-tracker-server",
   "version": "1.0.0",
   "description": "Backend API for Academic Study Tracker",
+  "type": "module",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",

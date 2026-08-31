@@ -196,6 +196,23 @@ export const classInstanceApi = {
     return handleResponse<IClassInstance>(res);
   },
 
+  async updateNotes(
+    id: string,
+    data: {
+      topic?: string;
+      notes?: string;
+      hasHomework?: boolean;
+      homeworkDetails?: string;
+    }
+  ): Promise<IClassInstance> {
+    const res = await fetch(`${API_BASE}/class-instances/${id}/notes`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<IClassInstance>(res);
+  },
+
   async getStats(semesterId?: string, courseId?: string): Promise<OverallAttendanceStats> {
     const query = new URLSearchParams();
     if (semesterId) query.set('semesterId', semesterId);

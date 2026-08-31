@@ -73,6 +73,19 @@ const classInstanceSchema = new Schema<IClassInstanceDocument>(
       trim: true,
       default: '',
     },
+    notes: {
+      type: String,
+      default: '',
+    },
+    hasHomework: {
+      type: Boolean,
+      default: false,
+    },
+    homeworkDetails: {
+      type: String,
+      trim: true,
+      default: '',
+    },
   },
   {
     timestamps: true,

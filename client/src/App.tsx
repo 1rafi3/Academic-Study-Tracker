@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CalendarDashboard } from './components/CalendarDashboard.js';
+import { CourseNotesTimeline } from './components/CourseNotesTimeline.js';
 import { SemesterManager } from './components/SemesterManager.js';
 import { CourseManager } from './components/CourseManager.js';
 import { ScheduleManager } from './components/ScheduleManager.js';
@@ -15,7 +16,8 @@ import {
   GraduationCap,
   BookOpen,
   CalendarCheck,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  FileText
 } from 'lucide-react';
 
 const queryClient = new QueryClient({
@@ -43,7 +45,7 @@ interface HealthResponse {
 }
 
 function MainDashboard() {
-  const [activeTab, setActiveTab] = useState<'calendar' | 'classes' | 'academic' | 'health'>('calendar');
+  const [activeTab, setActiveTab] = useState<'calendar' | 'classes' | 'notes' | 'academic' | 'health'>('calendar');
   const [selectedSemesterId, setSelectedSemesterId] = useState<string | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
@@ -110,21 +112,21 @@ function MainDashboard() {
                   Academic Study Tracker
                 </h1>
                 <span className="px-2 py-0.5 rounded-full bg-indigo-950 border border-indigo-700/50 text-indigo-300 text-[10px] font-semibold uppercase tracking-wider">
-                  Phase 4
+                  Phase 5
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Academic Calendar &bull; Daily Class View &bull; Attendance Management
+                Academic Calendar &bull; Class Notes &bull; Lecture Timeline &bull; Attendance
               </p>
             </div>
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex items-center p-1 rounded-xl bg-slate-900 border border-slate-800">
+          <div className="flex flex-wrap items-center p-1 rounded-xl bg-slate-900 border border-slate-800 gap-0.5">
             <button
               id="tab-calendar-btn"
               onClick={() => setActiveTab('calendar')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                 activeTab === 'calendar'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-400 hover:text-slate-200'
@@ -134,21 +136,33 @@ function MainDashboard() {
               Calendar
             </button>
             <button
+              id="tab-notes-btn"
+              onClick={() => setActiveTab('notes')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                activeTab === 'notes'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Study Notes
+            </button>
+            <button
               id="tab-classes-btn"
               onClick={() => setActiveTab('classes')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                 activeTab === 'classes'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <CalendarCheck className="w-3.5 h-3.5" />
-              Classes & Attendance
+              Classes
             </button>
             <button
               id="tab-academic-btn"
               onClick={() => setActiveTab('academic')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                 activeTab === 'academic'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-400 hover:text-slate-200'
@@ -160,7 +174,7 @@ function MainDashboard() {
             <button
               id="tab-health-btn"
               onClick={() => setActiveTab('health')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                 activeTab === 'health'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-400 hover:text-slate-200'
@@ -172,7 +186,7 @@ function MainDashboard() {
           </div>
         </header>
 
-        {/* Tab 1: Main Academic Calendar & Dashboard (Default Primary View) */}
+        {/* Tab 1: Main Academic Calendar & Dashboard */}
         {activeTab === 'calendar' && (
           <main className="space-y-6">
             <CalendarDashboard
@@ -184,7 +198,19 @@ function MainDashboard() {
           </main>
         )}
 
-        {/* Tab 2: Class Instances & Attendance Tracking */}
+        {/* Tab 2: Study Notes & Chronological Lecture Timeline (Phase 5) */}
+        {activeTab === 'notes' && (
+          <main className="space-y-6">
+            <CourseNotesTimeline
+              selectedSemesterId={selectedSemesterId}
+              onSelectSemester={handleSelectSemester}
+              onNavigateToSetup={() => setActiveTab('academic')}
+              onNavigateToGenerator={() => setActiveTab('classes')}
+            />
+          </main>
+        )}
+
+        {/* Tab 3: Class Instances & Attendance Tracking */}
         {activeTab === 'classes' && (
           <main className="space-y-6">
             <ClassInstanceManager
@@ -194,7 +220,7 @@ function MainDashboard() {
           </main>
         )}
 
-        {/* Tab 3: Academic Setup (Semesters, Courses, Schedules) */}
+        {/* Tab 4: Academic Setup (Semesters, Courses, Schedules) */}
         {activeTab === 'academic' && (
           <main className="space-y-6">
             {/* Hierarchy Guide */}
@@ -208,7 +234,9 @@ function MainDashboard() {
                 <span className="text-slate-500">&rarr;</span>
                 <span className="px-2 py-0.5 rounded bg-slate-800 text-indigo-300 font-medium">3. Weekly Schedule</span>
                 <span className="text-slate-500">&rarr;</span>
-                <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-medium border border-emerald-800/50">4. Calendar Dashboard (Phase 4 Active)</span>
+                <span className="px-2 py-0.5 rounded bg-slate-800 text-indigo-300 font-medium">4. Class Occurrences</span>
+                <span className="text-slate-500">&rarr;</span>
+                <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-medium border border-emerald-800/50">5. Study Notes & Timeline (Phase 5 Active)</span>
               </div>
             </div>
 
@@ -236,7 +264,7 @@ function MainDashboard() {
           </main>
         )}
 
-        {/* Tab 4: System Health Diagnostics */}
+        {/* Tab 5: System Health Diagnostics */}
         {activeTab === 'health' && (
           <main className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -339,7 +367,7 @@ function MainDashboard() {
 
         {/* Footer */}
         <footer className="border-t border-slate-800/80 pt-4 text-center text-xs text-slate-500">
-          <p>Academic Study Tracker &bull; Phase 4 &bull; Built with React, Vite, Node.js, Express & MongoDB Atlas</p>
+          <p>Academic Study Tracker &bull; Phase 5 &bull; Built with React, Vite, Node.js, Express & MongoDB Atlas</p>
         </footer>
       </div>
     </div>

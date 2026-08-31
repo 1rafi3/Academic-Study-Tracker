@@ -126,6 +126,9 @@ export const generateClassInstances = async (req: Request, res: Response): Promi
                     type: schedule.type || 'Lecture',
                     attendanceStatus: 'unmarked',
                     topic: '',
+                    notes: '',
+                    hasHomework: false,
+                    homeworkDetails: '',
                   },
                 },
                 upsert: true,
@@ -451,6 +454,48 @@ export const deleteClassInstance = async (req: Request, res: Response): Promise<
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to delete class instance';
+    res.status(500).json({ success: false, message });
+  }
+};
+
+export const updateClassNotes = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const { topic, notes, hasHomework, homeworkDetails } = req.body;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ success: false, message: 'Invalid class instance ID format' });
+      return;
+    }
+
+    const updateFields: Record<string, unknown> = {};
+    if (topic !== undefined) updateFields.topic = typeof topic === 'string' ? topic.trim() : '';
+    if (notes !== undefined) updateFields.notes = typeof notes === 'string' ? notes : '';
+    if (hasHomework !== undefined) updateFields.hasHomework = Boolean(hasHomework);
+    if (homeworkDetails !== undefined) {
+      updateFields.homeworkDetails = typeof homeworkDetails === 'string' ? homeworkDetails.trim() : '';
+    }
+
+    const updated = await ClassInstance.findByIdAndUpdate(
+      id,
+      { $set: updateFields },
+      { new: true, runValidators: true }
+    )
+      .populate('courseId', 'courseCode courseName color instructor')
+      .populate('semesterId', 'name year term isActive');
+
+    if (!updated) {
+      res.status(404).json({ success: false, message: 'Class instance not found' });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Class notes updated successfully',
+      data: updated,
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to update class notes';
     res.status(500).json({ success: false, message });
   }
 };
