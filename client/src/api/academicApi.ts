@@ -9,6 +9,7 @@ import type {
   AcademicEventType,
   IBangladeshHoliday,
   OverallAttendanceStats,
+  AttendanceAnalyticsResponse,
   ClassGenerationResult,
   ApiResponse,
 } from '../types/academic.js';
@@ -336,6 +337,24 @@ export const holidayApi = {
     const res = await fetch(`${API_BASE}/holidays/check?date=${dateString}`);
     const json = await res.json();
     return json;
+  },
+};
+
+export const analyticsApi = {
+  async getAttendance(params?: {
+    semesterId?: string;
+    courseId?: string;
+    target?: number;
+  }): Promise<AttendanceAnalyticsResponse> {
+    const query = new URLSearchParams();
+    if (params?.semesterId) query.set('semesterId', params.semesterId);
+    if (params?.courseId) query.set('courseId', params.courseId);
+    if (params?.target !== undefined) query.set('target', String(params.target));
+
+    const queryString = query.toString();
+    const url = queryString ? `${API_BASE}/analytics/attendance?${queryString}` : `${API_BASE}/analytics/attendance`;
+    const res = await fetch(url);
+    return handleResponse<AttendanceAnalyticsResponse>(res);
   },
 };
 

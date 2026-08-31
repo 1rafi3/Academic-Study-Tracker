@@ -158,6 +158,51 @@ export interface OverallAttendanceStats {
   courses: CourseAttendanceStats[];
 }
 
+export type AttendanceRiskStatus = 'SAFE' | 'WARNING' | 'DANGER' | 'NO_DATA';
+
+export interface CourseAnalyticsData {
+  courseId: string;
+  courseCode: string;
+  courseName: string;
+  color: string;
+  total: number;
+  attended: number;
+  missed: number;
+  unmarked: number;
+  cancelled: number;
+  holiday: number;
+  decided: number;
+  percentage: number;
+  targetPercentage: number;
+  differenceFromTarget: number;
+  status: AttendanceRiskStatus;
+  canBunk: number;
+  needToAttend: number;
+  futureScheduledCount: number;
+}
+
+export interface OverallAnalyticsSummary {
+  total: number;
+  attended: number;
+  missed: number;
+  unmarked: number;
+  cancelled: number;
+  holiday: number;
+  decided: number;
+  percentage: number;
+  targetPercentage: number;
+  differenceFromTarget: number;
+  status: AttendanceRiskStatus;
+  canBunk: number;
+  needToAttend: number;
+}
+
+export interface AttendanceAnalyticsResponse {
+  targetPercentage: number;
+  overall: OverallAnalyticsSummary;
+  courses: CourseAnalyticsData[];
+}
+
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;
@@ -165,3 +210,4 @@ export interface ApiResponse<T = unknown> {
   count?: number;
   errors?: string[];
 }
+

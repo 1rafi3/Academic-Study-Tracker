@@ -6,6 +6,7 @@ import courseRoutes from './routes/course.routes.js';
 import classInstanceRoutes from './routes/classInstance.routes.js';
 import academicEventRoutes from './routes/academicEvent.routes.js';
 import holidayRoutes from './routes/holiday.routes.js';
+import analyticsRoutes from './routes/analytics.routes.js';
 
 const app: Express = express();
 
@@ -40,6 +41,7 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/class-instances', classInstanceRoutes);
 app.use('/api/academic-events', academicEventRoutes);
 app.use('/api/holidays', holidayRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 
 

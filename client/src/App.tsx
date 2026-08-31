@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CalendarDashboard } from './components/CalendarDashboard.js';
 import { CourseNotesTimeline } from './components/CourseNotesTimeline.js';
+import { AttendanceAnalytics } from './components/AttendanceAnalytics.js';
 import { SemesterManager } from './components/SemesterManager.js';
 import { CourseManager } from './components/CourseManager.js';
 import { ScheduleManager } from './components/ScheduleManager.js';
@@ -17,7 +18,8 @@ import {
   BookOpen,
   CalendarCheck,
   Calendar as CalendarIcon,
-  FileText
+  FileText,
+  Target
 } from 'lucide-react';
 
 const queryClient = new QueryClient({
@@ -45,7 +47,7 @@ interface HealthResponse {
 }
 
 function MainDashboard() {
-  const [activeTab, setActiveTab] = useState<'calendar' | 'classes' | 'notes' | 'academic' | 'health'>('calendar');
+  const [activeTab, setActiveTab] = useState<'calendar' | 'notes' | 'analytics' | 'classes' | 'academic' | 'health'>('calendar');
   const [selectedSemesterId, setSelectedSemesterId] = useState<string | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
@@ -112,11 +114,11 @@ function MainDashboard() {
                   Academic Study Tracker
                 </h1>
                 <span className="px-2 py-0.5 rounded-full bg-indigo-950 border border-indigo-700/50 text-indigo-300 text-[10px] font-semibold uppercase tracking-wider">
-                  Phase 5
+                  Phase 7
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Academic Calendar &bull; Class Notes &bull; Lecture Timeline &bull; Attendance
+                Academic Calendar &bull; Study Notes &bull; Attendance Analytics &bull; Schedule
               </p>
             </div>
           </div>
@@ -146,6 +148,18 @@ function MainDashboard() {
             >
               <FileText className="w-3.5 h-3.5" />
               Study Notes
+            </button>
+            <button
+              id="tab-analytics-btn"
+              onClick={() => setActiveTab('analytics')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                activeTab === 'analytics'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Target className="w-3.5 h-3.5" />
+              Analytics & Targets
             </button>
             <button
               id="tab-classes-btn"
@@ -206,6 +220,18 @@ function MainDashboard() {
               onSelectSemester={handleSelectSemester}
               onNavigateToSetup={() => setActiveTab('academic')}
               onNavigateToGenerator={() => setActiveTab('classes')}
+            />
+          </main>
+        )}
+
+        {/* Tab 3: Attendance Analytics, Targets & Bunk/Recovery Forecast (Phase 7) */}
+        {activeTab === 'analytics' && (
+          <main className="space-y-6">
+            <AttendanceAnalytics
+              selectedSemesterId={selectedSemesterId}
+              onSelectSemester={handleSelectSemester}
+              onNavigateToCalendar={() => setActiveTab('calendar')}
+              onNavigateToNotes={() => setActiveTab('notes')}
             />
           </main>
         )}
