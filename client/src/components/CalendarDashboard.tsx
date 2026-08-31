@@ -122,6 +122,25 @@ export const CalendarDashboard: React.FC<Props> = ({
     }
   }, [selectedSemesterId, activeSemester, onSelectSemester]);
 
+  // Automatically jump viewYear/viewMonth to the semester date range when viewing previous or future semesters
+  React.useEffect(() => {
+    if (activeSemester?.startDate && activeSemester?.endDate) {
+      const start = new Date(activeSemester.startDate);
+      const end = new Date(activeSemester.endDate);
+      const today = new Date();
+
+      if (today >= start && today <= end) {
+        setViewYear(today.getFullYear());
+        setViewMonth(today.getMonth());
+        setSelectedDate(getTodayDateString());
+      } else {
+        setViewYear(start.getFullYear());
+        setViewMonth(start.getMonth());
+        setSelectedDate(activeSemester.startDate.split('T')[0]);
+      }
+    }
+  }, [activeSemester?._id, activeSemester?.startDate, activeSemester?.endDate]);
+
   // Fetch Courses for filter dropdown
   const { data: courses = [] } = useQuery<ICourse[]>({
     queryKey: ['courses', activeSemester?._id],

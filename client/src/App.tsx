@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CalendarDashboard } from './components/CalendarDashboard.js';
 import { CourseNotesTimeline } from './components/CourseNotesTimeline.js';
 import { AttendanceAnalytics } from './components/AttendanceAnalytics.js';
+import { WeeklyRoutine } from './components/WeeklyRoutine.js';
 import { BackupData } from './components/BackupData.js';
 import { SemesterManager } from './components/SemesterManager.js';
 import { CourseManager } from './components/CourseManager.js';
@@ -20,7 +21,8 @@ import {
   CalendarCheck,
   Calendar as CalendarIcon,
   FileText,
-  Target
+  Target,
+  Clock
 } from 'lucide-react';
 
 const queryClient = new QueryClient({
@@ -48,7 +50,7 @@ interface HealthResponse {
 }
 
 function MainDashboard() {
-  const [activeTab, setActiveTab] = useState<'calendar' | 'notes' | 'analytics' | 'classes' | 'academic' | 'backup' | 'health'>('calendar');
+  const [activeTab, setActiveTab] = useState<'calendar' | 'notes' | 'routine' | 'analytics' | 'backup' | 'classes' | 'academic' | 'health'>('calendar');
   const [selectedSemesterId, setSelectedSemesterId] = useState<string | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
@@ -115,11 +117,11 @@ function MainDashboard() {
                   Academic Study Tracker
                 </h1>
                 <span className="px-2 py-0.5 rounded-full bg-indigo-950 border border-indigo-700/50 text-indigo-300 text-[10px] font-semibold uppercase tracking-wider">
-                  Phase 8
+                  Phase 9
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Calendar &bull; Study Notes &bull; Analytics &bull; Schedule &bull; Backup & Exports
+                Calendar &bull; Study Notes &bull; Weekly Routine &bull; Analytics &bull; Schedule &bull; Backup & Exports
               </p>
             </div>
           </div>
@@ -149,6 +151,18 @@ function MainDashboard() {
             >
               <FileText className="w-3.5 h-3.5" />
               Study Notes
+            </button>
+            <button
+              id="tab-routine-btn"
+              onClick={() => setActiveTab('routine')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                activeTab === 'routine'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              Weekly Routine
             </button>
             <button
               id="tab-analytics-btn"
@@ -237,7 +251,18 @@ function MainDashboard() {
           </main>
         )}
 
-        {/* Tab 3: Attendance Analytics, Targets & Bunk/Recovery Forecast (Phase 7) */}
+        {/* Tab 3: Weekly Routine Generator, Print & PDF Export (Phase 9) */}
+        {activeTab === 'routine' && (
+          <main className="space-y-6">
+            <WeeklyRoutine
+              selectedSemesterId={selectedSemesterId}
+              onSelectSemester={handleSelectSemester}
+              onNavigateToSetup={() => setActiveTab('academic')}
+            />
+          </main>
+        )}
+
+        {/* Tab 4: Attendance Analytics, Targets & Bunk/Recovery Forecast (Phase 7) */}
         {activeTab === 'analytics' && (
           <main className="space-y-6">
             <AttendanceAnalytics
