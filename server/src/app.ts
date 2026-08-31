@@ -4,6 +4,8 @@ import healthRoutes from './routes/health.routes.js';
 import semesterRoutes from './routes/semester.routes.js';
 import courseRoutes from './routes/course.routes.js';
 import classInstanceRoutes from './routes/classInstance.routes.js';
+import academicEventRoutes from './routes/academicEvent.routes.js';
+import holidayRoutes from './routes/holiday.routes.js';
 
 const app: Express = express();
 
@@ -36,6 +38,8 @@ app.use('/api', healthRoutes);
 app.use('/api/semesters', semesterRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/class-instances', classInstanceRoutes);
+app.use('/api/academic-events', academicEventRoutes);
+app.use('/api/holidays', holidayRoutes);
 
 
 

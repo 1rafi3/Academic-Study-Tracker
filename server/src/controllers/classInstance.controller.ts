@@ -7,9 +7,12 @@ import {
   DAYS_OF_WEEK,
   ATTENDANCE_STATUSES,
   AttendanceStatus,
+  CLASS_STATUSES,
+  ClassStatus,
   CourseAttendanceStats,
   OverallAttendanceStats,
 } from '../types/academic.types.js';
+import { getBangladeshHoliday } from '../utils/bangladeshHolidays.js';
 
 // Helper to format Date to YYYY-MM-DD in UTC
 export const formatDateToUTCString = (date: Date): string => {
@@ -99,6 +102,10 @@ export const generateClassInstances = async (req: Request, res: Response): Promi
       const dateString = formatDateToUTCString(current);
       const instanceDate = new Date(current);
 
+      const holiday = getBangladeshHoliday(dateString);
+      const initialStatus: ClassStatus = holiday ? 'holiday' : 'scheduled';
+      const holidayName = holiday ? holiday.name : '';
+
       for (const course of courses) {
         if (!course.schedules || course.schedules.length === 0) continue;
 
@@ -124,6 +131,9 @@ export const generateClassInstances = async (req: Request, res: Response): Promi
                     endTime: schedule.endTime,
                     room: schedule.room || '',
                     type: schedule.type || 'Lecture',
+                    status: initialStatus,
+                    cancellationReason: '',
+                    holidayName: holidayName,
                     attendanceStatus: 'unmarked',
                     topic: '',
                     notes: '',
@@ -331,7 +341,7 @@ export const getAttendanceStats = async (req: Request, res: Response): Promise<v
       filter.courseId = new mongoose.Types.ObjectId(String(courseId));
     }
 
-    // Aggregation pipeline to count attendance statuses grouped by course
+    // Aggregation pipeline to count attendance statuses grouped by course and class lifecycle status
     const aggregationResult = await ClassInstance.aggregate([
       { $match: filter },
       {
@@ -339,6 +349,7 @@ export const getAttendanceStats = async (req: Request, res: Response): Promise<v
           _id: {
             courseId: '$courseId',
             status: '$attendanceStatus',
+            classStatus: '$status',
           },
           count: { $sum: 1 },
         },
@@ -359,6 +370,7 @@ export const getAttendanceStats = async (req: Request, res: Response): Promise<v
     for (const item of aggregationResult) {
       const cId = item._id.courseId.toString();
       const status: AttendanceStatus = item._id.status;
+      const classStatus: string = item._id.classStatus || 'scheduled';
       const count: number = item.count;
 
       if (!courseStatsMap.has(cId)) {
@@ -379,9 +391,13 @@ export const getAttendanceStats = async (req: Request, res: Response): Promise<v
 
       const stat = courseStatsMap.get(cId)!;
       stat.total += count;
-      if (status === 'attended') stat.attended += count;
-      if (status === 'missed') stat.missed += count;
-      if (status === 'unmarked') stat.unmarked += count;
+
+      // Only scheduled classes contribute to attended, missed, and unmarked attendance requirements
+      if (classStatus === 'scheduled') {
+        if (status === 'attended') stat.attended += count;
+        if (status === 'missed') stat.missed += count;
+        if (status === 'unmarked') stat.unmarked += count;
+      }
     }
 
     // Compute percentage for each course
@@ -496,6 +512,62 @@ export const updateClassNotes = async (req: Request, res: Response): Promise<voi
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to update class notes';
+    res.status(500).json({ success: false, message });
+  }
+};
+
+export const updateClassStatus = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const { status, cancellationReason, holidayName } = req.body;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ success: false, message: 'Invalid class instance ID format' });
+      return;
+    }
+
+    if (!status || !CLASS_STATUSES.includes(status as ClassStatus)) {
+      res.status(400).json({
+        success: false,
+        message: `Invalid class status. Allowed: ${CLASS_STATUSES.join(', ')}`,
+      });
+      return;
+    }
+
+    const updateFields: Record<string, unknown> = {
+      status,
+    };
+
+    if (cancellationReason !== undefined) {
+      updateFields.cancellationReason = typeof cancellationReason === 'string' ? cancellationReason.trim() : '';
+    } else if (status === 'scheduled') {
+      updateFields.cancellationReason = '';
+    }
+
+    if (holidayName !== undefined) {
+      updateFields.holidayName = typeof holidayName === 'string' ? holidayName.trim() : '';
+    }
+
+    const updated = await ClassInstance.findByIdAndUpdate(
+      id,
+      { $set: updateFields },
+      { new: true, runValidators: true }
+    )
+      .populate('courseId', 'courseCode courseName color instructor')
+      .populate('semesterId', 'name year term isActive');
+
+    if (!updated) {
+      res.status(404).json({ success: false, message: 'Class instance not found' });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Class status updated to ${status}`,
+      data: updated,
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to update class status';
     res.status(500).json({ success: false, message });
   }
 };

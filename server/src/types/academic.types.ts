@@ -68,6 +68,31 @@ export interface ICourseDocument extends Omit<ICourse, 'schedules'>, Document {
   schedules: Types.DocumentArray<ISchedule & Document>;
 }
 
+export type ClassStatus = 'scheduled' | 'cancelled' | 'holiday';
+
+export const CLASS_STATUSES: ClassStatus[] = ['scheduled', 'cancelled', 'holiday'];
+
+export type AcademicEventType =
+  | 'Quiz'
+  | 'Class Test'
+  | 'Assignment'
+  | 'Viva'
+  | 'Final Exam'
+  | 'Presentation'
+  | 'Project Submission'
+  | 'Other';
+
+export const ACADEMIC_EVENT_TYPES: AcademicEventType[] = [
+  'Quiz',
+  'Class Test',
+  'Assignment',
+  'Viva',
+  'Final Exam',
+  'Presentation',
+  'Project Submission',
+  'Other',
+];
+
 export interface IClassInstance {
   courseId: Types.ObjectId | string;
   semesterId: Types.ObjectId | string;
@@ -80,6 +105,9 @@ export interface IClassInstance {
   room?: string;
   type?: 'Lecture' | 'Lab' | 'Tutorial' | 'Seminar' | 'Other';
   attendanceStatus: AttendanceStatus;
+  status?: ClassStatus;
+  cancellationReason?: string;
+  holidayName?: string;
   topic?: string;
   notes?: string;
   hasHomework?: boolean;
@@ -89,6 +117,23 @@ export interface IClassInstance {
 }
 
 export interface IClassInstanceDocument extends IClassInstance, Document {}
+
+export interface IAcademicEvent {
+  title: string;
+  eventType: AcademicEventType;
+  date: Date;          // UTC midnight Date
+  dateString: string;  // "YYYY-MM-DD"
+  semesterId: Types.ObjectId | string;
+  courseId?: Types.ObjectId | string | null;
+  startTime?: string;
+  endTime?: string;
+  room?: string;
+  description?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IAcademicEventDocument extends IAcademicEvent, Document {}
 
 export interface CourseAttendanceStats {
   courseId: string;

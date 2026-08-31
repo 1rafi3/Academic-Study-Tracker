@@ -4,6 +4,10 @@ import type {
   ISchedule,
   IClassInstance,
   AttendanceStatus,
+  ClassStatus,
+  IAcademicEvent,
+  AcademicEventType,
+  IBangladeshHoliday,
   OverallAttendanceStats,
   ClassGenerationResult,
   ApiResponse,
@@ -213,6 +217,22 @@ export const classInstanceApi = {
     return handleResponse<IClassInstance>(res);
   },
 
+  async updateStatus(
+    id: string,
+    data: {
+      status: ClassStatus;
+      cancellationReason?: string;
+      holidayName?: string;
+    }
+  ): Promise<IClassInstance> {
+    const res = await fetch(`${API_BASE}/class-instances/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<IClassInstance>(res);
+  },
+
   async getStats(semesterId?: string, courseId?: string): Promise<OverallAttendanceStats> {
     const query = new URLSearchParams();
     if (semesterId) query.set('semesterId', semesterId);
@@ -226,6 +246,96 @@ export const classInstanceApi = {
       method: 'DELETE',
     });
     return handleResponse<IClassInstance>(res);
+  },
+};
+
+export const academicEventApi = {
+  async getAll(params?: {
+    semesterId?: string;
+    courseId?: string;
+    startDate?: string;
+    endDate?: string;
+    date?: string;
+  }): Promise<IAcademicEvent[]> {
+    const query = new URLSearchParams();
+    if (params?.semesterId) query.set('semesterId', params.semesterId);
+    if (params?.courseId) query.set('courseId', params.courseId);
+    if (params?.startDate) query.set('startDate', params.startDate);
+    if (params?.endDate) query.set('endDate', params.endDate);
+    if (params?.date) query.set('date', params.date);
+
+    const queryString = query.toString();
+    const url = queryString ? `${API_BASE}/academic-events?${queryString}` : `${API_BASE}/academic-events`;
+    const res = await fetch(url);
+    return handleResponse<IAcademicEvent[]>(res);
+  },
+
+  async getById(id: string): Promise<IAcademicEvent> {
+    const res = await fetch(`${API_BASE}/academic-events/${id}`);
+    return handleResponse<IAcademicEvent>(res);
+  },
+
+  async create(data: {
+    title: string;
+    eventType: AcademicEventType;
+    dateString: string;
+    semesterId: string;
+    courseId?: string | null;
+    startTime?: string;
+    endTime?: string;
+    room?: string;
+    description?: string;
+  }): Promise<IAcademicEvent> {
+    const res = await fetch(`${API_BASE}/academic-events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<IAcademicEvent>(res);
+  },
+
+  async update(
+    id: string,
+    data: {
+      title?: string;
+      eventType?: AcademicEventType;
+      dateString?: string;
+      courseId?: string | null;
+      startTime?: string;
+      endTime?: string;
+      room?: string;
+      description?: string;
+    }
+  ): Promise<IAcademicEvent> {
+    const res = await fetch(`${API_BASE}/academic-events/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<IAcademicEvent>(res);
+  },
+
+  async delete(id: string): Promise<IAcademicEvent> {
+    const res = await fetch(`${API_BASE}/academic-events/${id}`, {
+      method: 'DELETE',
+    });
+    return handleResponse<IAcademicEvent>(res);
+  },
+};
+
+export const holidayApi = {
+  async getHolidays(year: number, monthIndex?: number): Promise<IBangladeshHoliday[]> {
+    const query = new URLSearchParams();
+    query.set('year', String(year));
+    if (monthIndex !== undefined) query.set('month', String(monthIndex));
+    const res = await fetch(`${API_BASE}/holidays?${query.toString()}`);
+    return handleResponse<IBangladeshHoliday[]>(res);
+  },
+
+  async checkHoliday(dateString: string): Promise<{ isHoliday: boolean; data: IBangladeshHoliday | null }> {
+    const res = await fetch(`${API_BASE}/holidays/check?date=${dateString}`);
+    const json = await res.json();
+    return json;
   },
 };
 

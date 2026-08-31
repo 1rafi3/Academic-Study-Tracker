@@ -3,6 +3,7 @@ import {
   IClassInstanceDocument,
   DAYS_OF_WEEK,
   ATTENDANCE_STATUSES,
+  CLASS_STATUSES,
 } from '../types/academic.types.js';
 
 const classInstanceSchema = new Schema<IClassInstanceDocument>(
@@ -58,6 +59,25 @@ const classInstanceSchema = new Schema<IClassInstanceDocument>(
       type: String,
       enum: ['Lecture', 'Lab', 'Tutorial', 'Seminar', 'Other'],
       default: 'Lecture',
+    },
+    status: {
+      type: String,
+      enum: {
+        values: CLASS_STATUSES,
+        message: '{VALUE} is not a valid class status. Allowed: scheduled, cancelled, holiday',
+      },
+      default: 'scheduled',
+      index: true,
+    },
+    cancellationReason: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    holidayName: {
+      type: String,
+      trim: true,
+      default: '',
     },
     attendanceStatus: {
       type: String,

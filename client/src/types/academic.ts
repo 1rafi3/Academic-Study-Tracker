@@ -64,6 +64,56 @@ export interface ICourse {
   updatedAt?: string;
 }
 
+export type ClassStatus = 'scheduled' | 'cancelled' | 'holiday';
+
+export const CLASS_STATUSES: ClassStatus[] = ['scheduled', 'cancelled', 'holiday'];
+
+export type AcademicEventType =
+  | 'Quiz'
+  | 'Class Test'
+  | 'Assignment'
+  | 'Viva'
+  | 'Final Exam'
+  | 'Presentation'
+  | 'Project Submission'
+  | 'Other';
+
+export const ACADEMIC_EVENT_TYPES: AcademicEventType[] = [
+  'Quiz',
+  'Class Test',
+  'Assignment',
+  'Viva',
+  'Final Exam',
+  'Presentation',
+  'Project Submission',
+  'Other',
+];
+
+export interface IAcademicEvent {
+  _id: string;
+  id?: string;
+  title: string;
+  eventType: AcademicEventType;
+  date: string;
+  dateString: string;
+  semesterId: ISemester | string;
+  courseId?: ICourse | string | null;
+  startTime?: string;
+  endTime?: string;
+  room?: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface IBangladeshHoliday {
+  dateString: string;
+  name: string;
+  nameBangla?: string;
+  isPublicHoliday: boolean;
+  type: 'national' | 'religious' | 'cultural';
+}
+
 export interface IClassInstance {
   _id: string;
   id?: string;
@@ -77,6 +127,9 @@ export interface IClassInstance {
   endTime: string;
   room?: string;
   type?: 'Lecture' | 'Lab' | 'Tutorial' | 'Seminar' | 'Other';
+  status?: ClassStatus;
+  cancellationReason?: string;
+  holidayName?: string;
   attendanceStatus: AttendanceStatus;
   topic?: string;
   notes?: string;

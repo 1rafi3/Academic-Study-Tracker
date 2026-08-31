@@ -5,6 +5,7 @@ import {
   getClassInstanceById,
   updateAttendance,
   updateClassNotes,
+  updateClassStatus,
   getAttendanceStats,
   deleteClassInstance,
 } from '../controllers/classInstance.controller.js';
@@ -23,8 +24,9 @@ router.route('/:id')
   .get(getClassInstanceById)
   .delete(deleteClassInstance);
 
-// Attendance and Notes updates
+// Attendance, Notes, and Status/Exception updates
 router.patch('/:id/attendance', updateAttendance);
 router.patch('/:id/notes', updateClassNotes);
+router.patch('/:id/status', updateClassStatus);
 
 export default router;
