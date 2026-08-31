@@ -31,8 +31,8 @@ export const WeeklyRoutine: React.FC<Props> = ({
   onNavigateToSetup,
 }) => {
   // Customization State
-  const [is12Hour, setIs12Hour] = useState<boolean>(true); // default to 12h like "9 AM - 10:30 AM"
-  const [colorTheme, setColorTheme] = useState<'parchment' | 'courseColor'>('parchment'); // 'parchment' matches user image
+  const [is12Hour, setIs12Hour] = useState<boolean>(true);
+  const [colorTheme, setColorTheme] = useState<'vibrant' | 'parchment' | 'minimal'>('vibrant');
   const [showRoom, setShowRoom] = useState<boolean>(true);
   const [showInstructor, setShowInstructor] = useState<boolean>(true);
   const [showCourseName, setShowCourseName] = useState<boolean>(true);
@@ -114,7 +114,7 @@ export const WeeklyRoutine: React.FC<Props> = ({
             Weekly Class Routine & Timetable
           </h2>
           <p className="text-xs text-slate-400">
-            Clean university timetable format with discrete class time slots &amp; sharp pointer corners.
+            Beautiful colored timetable grid with 1-click PDF export and watermark.
           </p>
         </div>
 
@@ -135,7 +135,7 @@ export const WeeklyRoutine: React.FC<Props> = ({
             </select>
           </div>
 
-          {/* Print Button */}
+          {/* Print / Download PDF Button */}
           <button
             type="button"
             disabled={routineItems.length === 0}
@@ -143,7 +143,7 @@ export const WeeklyRoutine: React.FC<Props> = ({
             className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-none bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
           >
             <Printer className="w-4 h-4" />
-            Print Routine
+            Download PDF / Print
           </button>
         </div>
       </div>
@@ -203,21 +203,22 @@ export const WeeklyRoutine: React.FC<Props> = ({
         <div className="p-3.5 rounded-none bg-slate-900 border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs print:hidden shadow-sm">
           <div className="flex items-center gap-2 text-slate-300 font-bold uppercase tracking-wider text-[11px]">
             <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-400" />
-            Display Options:
+            Display &amp; PDF Colors:
           </div>
 
           <div className="flex flex-wrap items-center gap-4 text-xs text-slate-300">
             {/* Color Theme Selector */}
             <div className="flex items-center gap-1.5 border-r border-slate-800 pr-3">
-              <Palette className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-slate-400 font-medium">Style:</span>
+              <Palette className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="text-slate-400 font-medium">Color Palette:</span>
               <select
                 value={colorTheme}
                 onChange={(e) => setColorTheme(e.target.value as any)}
                 className="px-2 py-0.5 rounded-none bg-slate-950 border border-slate-800 text-slate-200 text-xs font-semibold cursor-pointer"
               >
-                <option value="parchment">Classic Timetable (Image Style)</option>
-                <option value="courseColor">Course Accent Colors</option>
+                <option value="vibrant">Vibrant Course Colors (Recommended)</option>
+                <option value="parchment">Warm Parchment / Amber</option>
+                <option value="minimal">Clean Minimal Blueprint</option>
               </select>
             </div>
 
@@ -268,22 +269,21 @@ export const WeeklyRoutine: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Main Timetable Card Matching the Reference Image */}
-      <div className="p-4 sm:p-6 rounded-none bg-slate-900 border border-slate-800 shadow-2xl backdrop-blur-md space-y-4 print:p-0 print:border-none print:shadow-none print:bg-white print:text-black">
-        {/* Printable Header (Visible ONLY during print) */}
-        <div className="hidden print:block border-b-2 border-black pb-3 mb-4">
-          <div className="flex items-start justify-between">
+      {/* Main Timetable Card (Optimized for Screen & High-Resolution Colored PDF Print) */}
+      <div className="p-4 sm:p-6 rounded-none bg-slate-900 border border-slate-800 shadow-2xl backdrop-blur-md space-y-4 print:p-2 print:border-none print:shadow-none print:bg-white print:text-slate-900">
+        {/* Printable Header (Visible ONLY during print / PDF download) */}
+        <div className="hidden print:block border-b-2 border-slate-900 pb-2 mb-3">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-black uppercase tracking-tight text-black">
-                Academic Weekly Class Routine
+              <h1 className="text-xl font-black uppercase tracking-wider text-slate-950">
+                {activeSemester?.name || 'Academic'} Weekly Routine
               </h1>
-              <p className="text-xs text-gray-700 font-medium">
-                Semester: <span className="font-bold text-black">{activeSemester?.name}</span> ({activeSemester?.year} {activeSemester?.term}) &bull; Generated from Academic Tracker
+              <p className="text-xs text-slate-700 font-bold">
+                {activeSemester?.year} {activeSemester?.term} Semester
               </p>
             </div>
-            <div className="text-right text-[10px] text-gray-600">
-              <p>Weekly Hours: {summary.totalWeeklyHours}h &bull; Total Classes: {summary.totalWeeklyClasses}</p>
-              <p>Printed: {new Date().toLocaleDateString('en-US', { dateStyle: 'medium' })}</p>
+            <div className="text-right text-[10px] text-slate-500 font-medium">
+              Academic Study Tracker
             </div>
           </div>
         </div>
@@ -311,14 +311,14 @@ export const WeeklyRoutine: React.FC<Props> = ({
           </div>
         ) : (
           /* ============================================================ */
-          /* TIMETABLE GRID MATCHING THE USER REFERENCE IMAGE             */
+          /* BEAUTIFULLY COLORED TIMETABLE GRID MATRIX                    */
           /* ============================================================ */
           <div className="overflow-x-auto rounded-none p-1 print:p-0">
-            <div className="min-w-[960px] print:min-w-full space-y-3">
+            <div className="min-w-[960px] print:min-w-full space-y-2.5">
               {/* Table Headers: Weekdays */}
-              <div className="grid grid-cols-8 gap-3 text-center text-xs font-black">
-                {/* Time Axis Title */}
-                <div className="py-2.5 px-2 bg-slate-950/80 border border-slate-800 print:border-black text-slate-400 print:text-black uppercase tracking-wider font-mono">
+              <div className="grid grid-cols-8 gap-2.5 text-center text-xs font-black">
+                {/* Time Column Header */}
+                <div className="py-2.5 px-2 bg-slate-950 print:bg-slate-900 border border-slate-800 print:border-slate-900 text-slate-300 print:text-white uppercase tracking-wider font-mono shadow-xs">
                   Time
                 </div>
 
@@ -328,10 +328,10 @@ export const WeeklyRoutine: React.FC<Props> = ({
                   return (
                     <div
                       key={day}
-                      className={`py-2.5 px-2 uppercase tracking-wider border print:border-black font-black transition ${
+                      className={`py-2.5 px-2 uppercase tracking-wider border font-black transition shadow-xs ${
                         isToday
-                          ? 'bg-indigo-950/80 border-indigo-500 text-indigo-300 print:bg-transparent print:text-black'
-                          : 'bg-slate-950/80 border-slate-800 text-slate-200 print:bg-transparent print:text-black'
+                          ? 'bg-indigo-950 print:bg-indigo-900 border-indigo-500 print:border-indigo-900 text-indigo-200 print:text-white'
+                          : 'bg-slate-950 print:bg-slate-900 border-slate-800 print:border-slate-900 text-slate-200 print:text-white'
                       }`}
                     >
                       <div className="flex items-center justify-center gap-1">
@@ -347,14 +347,14 @@ export const WeeklyRoutine: React.FC<Props> = ({
                 })}
               </div>
 
-              {/* Rows: Each distinct schedule time slot (e.g. 9 AM - 10:30 AM, 10:30 AM - 12 PM, etc.) */}
+              {/* Rows: Each distinct schedule time slot */}
               {timeSlotRows.map((slot) => {
                 const timeLabel = is12Hour ? slot.label12 : slot.label24;
 
                 return (
-                  <div key={slot.slotKey} className="grid grid-cols-8 gap-3 items-stretch">
-                    {/* Far Left Time Box (Dark rectangle matching user image) */}
-                    <div className="p-3 bg-[#1e232a] dark:bg-[#111317] border-2 border-slate-700/80 print:border-black text-slate-100 print:text-black flex items-center justify-center text-center font-black text-xs tracking-tight rounded-none shadow-md">
+                  <div key={slot.slotKey} className="grid grid-cols-8 gap-2.5 items-stretch">
+                    {/* Far Left Time Box (Dark high-contrast rectangle) */}
+                    <div className="p-3 bg-slate-950 print:bg-slate-900 border-2 border-slate-800 print:border-slate-900 text-slate-100 print:text-white flex items-center justify-center text-center font-black text-xs tracking-tight rounded-none shadow-md font-mono">
                       <span>{timeLabel}</span>
                     </div>
 
@@ -366,48 +366,87 @@ export const WeeklyRoutine: React.FC<Props> = ({
                       return (
                         <div key={day} className="flex flex-col">
                           {classesInSlot.length === 0 ? (
-                            /* Empty Cell Placeholder matching user image */
-                            <div className="p-3 flex-1 min-h-[76px] bg-[#f9e9cf]/50 dark:bg-[#201c15] border-2 border-slate-800/30 dark:border-[#382f23] rounded-none print:border-gray-300 print:bg-white flex items-center justify-center">
-                              {/* Blank box */}
+                            /* Empty Cell Placeholder */
+                            <div className="p-3 flex-1 min-h-[76px] bg-slate-950/30 print:bg-slate-50 border-2 border-dashed border-slate-800/40 print:border-slate-300 rounded-none flex items-center justify-center">
+                              <span className="text-[10px] text-slate-700/30 print:text-slate-300 select-none">&mdash;</span>
                             </div>
                           ) : (
-                            /* Active Class Card(s) matching user image */
+                            /* Active Class Card(s) with rich vibrant colors */
                             <div className="space-y-2 flex-1 flex flex-col">
                               {classesInSlot.map((cls, cIdx) => {
-                                const isParchment = colorTheme === 'parchment';
+                                const courseColor = cls.color || '#6366f1';
+
+                                // Vibrant Course Colors styling
+                                const vibrantBg = `${courseColor}18`;
+                                const vibrantBorder = courseColor;
+
+                                // Parchment styling
+                                const parchmentBg = '#f7deb4';
+                                const parchmentBorder = '#3b3225';
+
+                                // Minimal styling
+                                const minimalBg = '#1e293b';
+                                const minimalBorder = '#475569';
+
+                                const currentBg =
+                                  colorTheme === 'parchment'
+                                    ? parchmentBg
+                                    : colorTheme === 'minimal'
+                                    ? minimalBg
+                                    : vibrantBg;
+
+                                const currentBorder =
+                                  colorTheme === 'parchment'
+                                    ? parchmentBorder
+                                    : colorTheme === 'minimal'
+                                    ? minimalBorder
+                                    : vibrantBorder;
+
+                                const textColor =
+                                  colorTheme === 'parchment'
+                                    ? '#1c1813'
+                                    : '#f8fafc';
 
                                 return (
                                   <div
                                     key={`${cls.courseId}-${cls.scheduleId}-${cIdx}`}
-                                    className={`p-2.5 flex-1 min-h-[76px] flex flex-col justify-center items-center text-center rounded-none border-2 shadow-sm transition-all duration-150 ${
-                                      isParchment
-                                        ? 'bg-[#f7deb4] dark:bg-[#342918] border-[#3b3225] dark:border-[#5c4a30] text-[#1c1813] dark:text-[#f8e5b9] print:bg-[#f7deb4] print:text-black print:border-black'
-                                        : 'border-slate-800 text-slate-100'
-                                    }`}
-                                    style={
-                                      !isParchment
-                                        ? {
-                                            backgroundColor: `${cls.color}25`,
-                                            borderColor: cls.color || '#6366f1',
-                                          }
-                                        : undefined
-                                    }
+                                    className="p-2.5 flex-1 min-h-[76px] flex flex-col justify-center items-center text-center rounded-none border-2 shadow-sm transition-all duration-150 relative overflow-hidden print:border-2"
+                                    style={{
+                                      backgroundColor: currentBg,
+                                      borderColor: currentBorder,
+                                      color: textColor,
+                                    }}
                                   >
-                                    {/* Primary Line: Course Code / Short Name (e.g. OOP, EE&CL, BS&P) */}
-                                    <div className="font-black text-xs uppercase tracking-wide leading-tight">
+                                    {/* Left Vibrant Color Stripe */}
+                                    {colorTheme === 'vibrant' && (
+                                      <div
+                                        className="absolute top-0 left-0 bottom-0 w-1.5 rounded-none"
+                                        style={{ backgroundColor: courseColor }}
+                                      />
+                                    )}
+
+                                    {/* Course Code (e.g. OOP, EE&CL, CSE 221) */}
+                                    <div
+                                      className="font-black text-xs uppercase tracking-wide leading-tight print:text-black"
+                                      style={
+                                        colorTheme === 'vibrant'
+                                          ? { color: undefined }
+                                          : undefined
+                                      }
+                                    >
                                       {cls.courseCode}
                                     </div>
 
                                     {/* Optional Course Full Name */}
                                     {showCourseName && cls.courseName && (
-                                      <p className="text-[10px] font-semibold opacity-90 line-clamp-1 leading-tight mt-0.5">
+                                      <p className="text-[10px] font-semibold opacity-90 line-clamp-1 leading-tight mt-0.5 print:text-slate-900">
                                         {cls.courseName}
                                       </p>
                                     )}
 
-                                    {/* Secondary Line: Room (Instructor) (e.g. 506 (GMN), 508 (RAR)) */}
+                                    {/* Room & Instructor in parenthesis (e.g. 506 (GMN)) */}
                                     {(showRoom || showInstructor) && (cls.room || cls.instructor) && (
-                                      <div className="text-[11px] font-bold opacity-85 mt-1 leading-tight">
+                                      <div className="text-[11px] font-bold opacity-90 mt-1 leading-tight print:text-slate-800">
                                         {showRoom && cls.room ? cls.room : ''}
                                         {showInstructor && cls.instructor
                                           ? ` (${cls.instructor})`
@@ -429,9 +468,14 @@ export const WeeklyRoutine: React.FC<Props> = ({
           </div>
         )}
 
-        {/* Printable Footer (Visible ONLY during print) */}
-        <div className="hidden print:block pt-3 border-t border-gray-300 text-center text-[9px] text-gray-500">
-          Academic Study Tracker &bull; Student Weekly Routine &bull; Generated from Course Schedules
+        {/* Minimal Bottom Watermark (Visible on both Screen and Printed PDF) */}
+        <div className="pt-4 border-t border-slate-800/80 print:border-slate-300 flex items-center justify-between text-[10px] text-slate-500 print:text-slate-600 font-mono select-none">
+          <span className="opacity-70">
+            {activeSemester?.name ? `${activeSemester.name} Timetable` : 'Academic Timetable'}
+          </span>
+          <span className="font-bold tracking-wider uppercase text-slate-400 print:text-slate-700 opacity-90">
+            MD SHEIK RAFIWOL KARIM RAFI
+          </span>
         </div>
       </div>
     </div>
