@@ -14,6 +14,7 @@ import {
   calculateBunkAllowance,
   calculateRecoveryRequirement,
 } from '../utils/analyticsCalculator.js';
+import { buildUserFilter } from '../utils/queryHelper.js';
 
 export const getAttendanceAnalytics = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -28,7 +29,7 @@ export const getAttendanceAnalytics = async (req: Request, res: Response): Promi
       }
     }
 
-    const filter: Record<string, unknown> = {};
+    const baseFilter: Record<string, unknown> = {};
 
     let targetSemesterId: string | null = null;
     if (semesterId) {
@@ -37,13 +38,13 @@ export const getAttendanceAnalytics = async (req: Request, res: Response): Promi
         return;
       }
       targetSemesterId = String(semesterId);
-      filter.semesterId = new mongoose.Types.ObjectId(targetSemesterId);
+      baseFilter.semesterId = new mongoose.Types.ObjectId(targetSemesterId);
     } else if (!courseId) {
-      // Find active semester as default if none specified
-      const activeSem = await Semester.findOne({ isActive: true });
+      // Find active semester belonging to this user as default if none specified
+      const activeSem = await Semester.findOne(buildUserFilter(req.userId, { isActive: true }));
       if (activeSem) {
         targetSemesterId = activeSem._id.toString();
-        filter.semesterId = activeSem._id;
+        baseFilter.semesterId = activeSem._id;
       }
     }
 
@@ -52,8 +53,10 @@ export const getAttendanceAnalytics = async (req: Request, res: Response): Promi
         res.status(400).json({ success: false, message: 'Invalid course ID format' });
         return;
       }
-      filter.courseId = new mongoose.Types.ObjectId(String(courseId));
+      baseFilter.courseId = new mongoose.Types.ObjectId(String(courseId));
     }
+
+    const filter = buildUserFilter(req.userId, baseFilter);
 
     // 1. Group class instances by courseId, attendanceStatus, and class status
     const aggregationResult = await ClassInstance.aggregate([
@@ -70,12 +73,12 @@ export const getAttendanceAnalytics = async (req: Request, res: Response): Promi
       },
     ]);
 
-    // 2. Fetch matched courses for metadata (code, name, color)
+    // 2. Fetch matched courses for metadata (code, name, color) belonging to this user
     let coursesToQuery: mongoose.Types.ObjectId[] = [];
     if (courseId) {
       coursesToQuery = [new mongoose.Types.ObjectId(String(courseId))];
     } else if (targetSemesterId) {
-      const semCourses = await Course.find({ semesterId: targetSemesterId, isArchived: { $ne: true } });
+      const semCourses = await Course.find(buildUserFilter(req.userId, { semesterId: targetSemesterId, isArchived: { $ne: true } }));
       coursesToQuery = semCourses.map((c) => c._id as mongoose.Types.ObjectId);
     } else {
       const matchedCourseIds = Array.from(
@@ -84,7 +87,7 @@ export const getAttendanceAnalytics = async (req: Request, res: Response): Promi
       coursesToQuery = matchedCourseIds.map((id) => new mongoose.Types.ObjectId(id));
     }
 
-    const courses = await Course.find({ _id: { $in: coursesToQuery } });
+    const courses = await Course.find(buildUserFilter(req.userId, { _id: { $in: coursesToQuery } }));
     const courseMap = new Map(courses.map((c) => [c._id.toString(), c]));
 
     // 3. Count future scheduled classes from today onwards for forecast

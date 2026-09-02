@@ -37,6 +37,7 @@ export interface ISchedule {
 }
 
 export interface ISemester {
+  userId?: string;   // Appwrite authenticated user ID (optional during migration)
   name: string;      // e.g. "Fall 2026"
   year: number;      // e.g. 2026
   term: 'Fall' | 'Spring' | 'Summer' | 'Winter' | 'Other';
@@ -51,6 +52,7 @@ export interface ISemester {
 export interface ISemesterDocument extends ISemester, Document {}
 
 export interface ICourse {
+  userId?: string;    // Appwrite authenticated user ID (optional during migration)
   courseCode: string; // e.g. "CSE 221"
   courseName: string; // e.g. "Object Oriented Programming"
   credit: number;     // e.g. 3.0
@@ -94,6 +96,7 @@ export const ACADEMIC_EVENT_TYPES: AcademicEventType[] = [
 ];
 
 export interface IClassInstance {
+  userId?: string;     // Appwrite authenticated user ID (optional during migration)
   courseId: Types.ObjectId | string;
   semesterId: Types.ObjectId | string;
   scheduleId?: Types.ObjectId | string;
@@ -119,6 +122,7 @@ export interface IClassInstance {
 export interface IClassInstanceDocument extends IClassInstance, Document {}
 
 export interface IAcademicEvent {
+  userId?: string;     // Appwrite authenticated user ID (optional during migration)
   title: string;
   eventType: AcademicEventType;
   date: Date;          // UTC midnight Date

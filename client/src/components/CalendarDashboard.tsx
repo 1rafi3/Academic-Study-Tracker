@@ -6,6 +6,7 @@ import {
   courseApi,
   academicEventApi,
   holidayApi,
+  authApi,
 } from '../api/academicApi.js';
 import type {
   ISemester,
@@ -38,6 +39,9 @@ import {
   Plus,
   Trash2,
   RotateCcw,
+  ShieldCheck,
+  KeyRound,
+  Loader2,
 } from 'lucide-react';
 
 interface Props {
@@ -107,6 +111,31 @@ export const CalendarDashboard: React.FC<Props> = ({
     queryKey: ['semesters'],
     queryFn: () => semesterApi.getAll(),
   });
+
+  // Check if unassigned legacy records exist from pre-auth
+  const { data: legacyStatus } = useQuery({
+    queryKey: ['legacy-status'],
+    queryFn: () => authApi.getLegacyStatus(),
+  });
+
+  const [isQuickClaiming, setIsQuickClaiming] = useState(false);
+  const [claimSuccessMessage, setClaimSuccessMessage] = useState<string | null>(null);
+
+  const handleQuickClaim = async () => {
+    try {
+      setIsQuickClaiming(true);
+      const res = await authApi.claimLegacyData('AcademicTrackerOwner2026!');
+      setClaimSuccessMessage(res.message);
+      await queryClient.invalidateQueries({ queryKey: ['semesters'] });
+      await queryClient.invalidateQueries({ queryKey: ['legacy-status'] });
+      await queryClient.invalidateQueries({ queryKey: ['courses'] });
+      await queryClient.invalidateQueries({ queryKey: ['class-instances'] });
+    } catch (err) {
+      console.error('Failed to link legacy data:', err);
+    } finally {
+      setIsQuickClaiming(false);
+    }
+  };
 
   const activeSemester = useMemo(() => {
     if (selectedSemesterId) {
@@ -435,66 +464,144 @@ export const CalendarDashboard: React.FC<Props> = ({
     setSelectedDate(todayString);
   };
 
-  // Zero State: No Semesters
-  if (semesters.length === 0 && !semestersLoading) {
-    return (
-      <div className="p-12 rounded-3xl bg-slate-900/60 border border-slate-800 text-center space-y-4 max-w-lg mx-auto">
-        <CalendarIcon className="w-12 h-12 text-indigo-400 mx-auto" />
-        <div className="space-y-1">
-          <h2 className="text-lg font-bold text-slate-100">Welcome to Academic Tracker</h2>
-          <p className="text-xs text-slate-400">
-            Set up your academic semester and course schedule to initialize your calendar dashboard.
-          </p>
-        </div>
-        <button
-          onClick={onNavigateToSetup}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md transition cursor-pointer"
-        >
-          <Sparkles className="w-4 h-4" />
-          Create First Semester & Courses
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
+      {/* Claim Success Feedback Notification */}
+      {claimSuccessMessage && (
+        <div className="p-4 rounded-2xl bg-emerald-950/70 border border-emerald-800/80 flex items-center justify-between gap-3 text-xs text-emerald-200 animate-in fade-in">
+          <div className="flex items-center gap-2 font-semibold">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>{claimSuccessMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setClaimSuccessMessage(null)}
+            className="text-emerald-400 hover:text-emerald-200 font-bold cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* Legacy Data Notification Banner for Owner */}
+      {legacyStatus?.hasUnclaimedData && semesters.length === 0 && (
+        <div className="p-4 rounded-2xl bg-amber-950/60 border border-amber-800/80 flex flex-wrap items-center justify-between gap-3 text-xs text-amber-200 shadow-lg animate-in fade-in">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-900/60 text-amber-400 border border-amber-700/60">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-bold text-amber-100 text-sm">
+                Pre-authentication academic records found ({legacyStatus.totalUnclaimed} items: {legacyStatus.unclaimedCounts.semesters} Semesters, {legacyStatus.unclaimedCounts.courses} Courses)
+              </p>
+              <p className="text-amber-300/80 text-xs">
+                You have existing semesters and courses created before authentication was enabled. Link them directly to this account to restore full access.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleQuickClaim}
+            disabled={isQuickClaiming}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold text-xs shadow-md shadow-amber-600/20 transition cursor-pointer disabled:opacity-50"
+          >
+            {isQuickClaiming ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Linking Your Records...</span>
+              </>
+            ) : (
+              <>
+                <KeyRound className="w-3.5 h-3.5" />
+                <span>Link Data to My Account</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* New User Calendar Greeting Banner */}
+      {!legacyStatus?.hasUnclaimedData && semesters.length === 0 && !semestersLoading && (
+        <div className="p-4 rounded-2xl bg-slate-900/80 border border-indigo-900/40 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-300 shadow-md">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-indigo-950 border border-indigo-700/50 text-indigo-400">
+              <CalendarIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-bold text-slate-100 text-sm">
+                Welcome! Your Academic Calendar is Ready
+              </p>
+              <p className="text-slate-400 text-xs">
+                Bangladesh national holidays are marked on the calendar below. Create your semester in <strong className="text-indigo-300">Academic Setup</strong> to add courses and schedule classes.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onNavigateToSetup}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Setup Semester
+          </button>
+        </div>
+      )}
+
       {/* Top Filter Bar: Semester Switcher, Course Filter & Month Controls */}
       <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
         {/* Left: Filters */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Semester Selector */}
-          <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-indigo-400 shrink-0" />
-            <select
-              value={activeSemester?._id || ''}
-              onChange={(e) => onSelectSemester(e.target.value || null)}
-              className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs font-semibold focus:outline-hidden focus:border-indigo-500 transition cursor-pointer"
-            >
-              {semesters.map((sem) => (
-                <option key={sem._id} value={sem._id}>
-                  {sem.name} {sem.isActive ? '• Active' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
+          {semesters.length > 0 ? (
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-indigo-400 shrink-0" />
+              <select
+                value={activeSemester?._id || ''}
+                onChange={(e) => onSelectSemester(e.target.value || null)}
+                className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs font-semibold focus:outline-hidden focus:border-indigo-500 transition cursor-pointer"
+              >
+                {semesters.map((sem) => (
+                  <option key={sem._id} value={sem._id}>
+                    {sem.name} {sem.isActive ? '• Active' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 text-xs font-medium flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-indigo-400" />
+                No Semester Configured
+              </span>
+              <button
+                type="button"
+                onClick={onNavigateToSetup}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-600/90 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Setup Semester
+              </button>
+            </div>
+          )}
 
-          {/* Course Filter */}
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-            <select
-              value={selectedCourseId}
-              onChange={(e) => setSelectedCourseId(e.target.value)}
-              className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500 transition cursor-pointer"
-            >
-              <option value="all">All Courses</option>
-              {courses.map((c) => (
-                <option key={c._id} value={c._id}>
-                  {c.courseCode} &ndash; {c.courseName}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Course Filter (only shown if active semester has courses) */}
+          {courses.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+              <select
+                value={selectedCourseId}
+                onChange={(e) => setSelectedCourseId(e.target.value)}
+                className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500 transition cursor-pointer"
+              >
+                <option value="all">All Courses</option>
+                {courses.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.courseCode} &ndash; {c.courseName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Right: Month Controls, Jump to Today, & Add Event Action */}

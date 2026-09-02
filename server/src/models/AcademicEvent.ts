@@ -6,6 +6,13 @@ import {
 
 const academicEventSchema = new Schema<IAcademicEventDocument>(
   {
+    userId: {
+      type: String,
+      required: false,
+      index: true,
+      default: null,
+      trim: true,
+    },
     title: {
       type: String,
       required: [true, 'Event title is required'],
@@ -76,6 +83,7 @@ const academicEventSchema = new Schema<IAcademicEventDocument>(
 
 academicEventSchema.index({ semesterId: 1, date: 1 });
 academicEventSchema.index({ courseId: 1, date: 1 });
+academicEventSchema.index({ userId: 1, semesterId: 1, date: 1 });
 
 export const AcademicEvent = model<IAcademicEventDocument>(
   'AcademicEvent',

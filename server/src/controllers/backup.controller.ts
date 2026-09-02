@@ -11,6 +11,7 @@ import {
   calculateBunkAllowance,
   calculateRecoveryRequirement,
 } from '../utils/analyticsCalculator.js';
+import { buildUserFilter } from '../utils/queryHelper.js';
 
 export interface BackupPayload {
   backupVersion: number;
@@ -28,12 +29,13 @@ export interface BackupPayload {
  * 1. GET /api/backup/export
  * Exports complete academic data as versioned JSON.
  */
-export const exportBackup = async (_req: Request, res: Response): Promise<void> => {
+export const exportBackup = async (req: Request, res: Response): Promise<void> => {
   try {
-    const semesters = await Semester.find().lean();
-    const courses = await Course.find().lean();
-    const classInstances = await ClassInstance.find().lean();
-    const academicEvents = await AcademicEvent.find().lean();
+    const userId = req.userId;
+    const semesters = await Semester.find(buildUserFilter(userId)).lean();
+    const courses = await Course.find(buildUserFilter(userId)).lean();
+    const classInstances = await ClassInstance.find(buildUserFilter(userId)).lean();
+    const academicEvents = await AcademicEvent.find(buildUserFilter(userId)).lean();
 
     const cleanDocs = (docs: any[]) =>
       docs.map((doc) => {
@@ -111,8 +113,8 @@ export const validateBackup = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Check existing records in DB to calculate toInsert vs toSkip
-    const existingSemesters = await Semester.find().lean();
+    // Check existing records in DB for this user to calculate toInsert vs toSkip
+    const existingSemesters = await Semester.find(buildUserFilter(req.userId)).lean();
     const existingSemesterKeySet = new Set(
       existingSemesters.map((s) => `${s.name}_${s.year}_${s.term}`.toLowerCase())
     );
@@ -132,7 +134,7 @@ export const validateBackup = async (req: Request, res: Response): Promise<void>
       }
     }
 
-    const existingCourses = await Course.find().lean();
+    const existingCourses = await Course.find(buildUserFilter(req.userId)).lean();
     const existingCourseCodes = new Set(existingCourses.map((c) => `${c.courseCode}`.toUpperCase()));
 
     let coursesToInsert = 0;
@@ -212,10 +214,10 @@ export const importBackup = async (req: Request, res: Response): Promise<void> =
     if (mode === 'replace_semester' && targetSemesterId) {
       if (mongoose.Types.ObjectId.isValid(String(targetSemesterId))) {
         const semObjId = new mongoose.Types.ObjectId(String(targetSemesterId));
-        await ClassInstance.deleteMany({ semesterId: semObjId });
-        await AcademicEvent.deleteMany({ semesterId: semObjId });
-        await Course.deleteMany({ semesterId: semObjId });
-        await Semester.findByIdAndDelete(semObjId);
+        await ClassInstance.deleteMany(buildUserFilter(req.userId, { semesterId: semObjId }));
+        await AcademicEvent.deleteMany(buildUserFilter(req.userId, { semesterId: semObjId }));
+        await Course.deleteMany(buildUserFilter(req.userId, { semesterId: semObjId }));
+        await Semester.findOneAndDelete(buildUserFilter(req.userId, { _id: semObjId }));
       }
     }
 
@@ -223,18 +225,19 @@ export const importBackup = async (req: Request, res: Response): Promise<void> =
     for (const sem of semesters) {
       const oldId = sem._id ? sem._id.toString() : null;
 
-      // Find existing matching semester by business key (name + year + term)
-      let existing = await Semester.findOne({
+      // Find existing matching semester for this user by business key (name + year + term)
+      let existing = await Semester.findOne(buildUserFilter(req.userId, {
         name: sem.name,
         year: sem.year,
         term: sem.term,
-      });
+      }));
 
       if (existing) {
         semestersSkipped++;
         if (oldId) semesterIdMap.set(oldId, existing._id as mongoose.Types.ObjectId);
       } else {
         const newSem = await Semester.create({
+          userId: req.userId,
           name: sem.name,
           year: sem.year,
           term: sem.term,
@@ -259,11 +262,11 @@ export const importBackup = async (req: Request, res: Response): Promise<void> =
         continue;
       }
 
-      // Check if course already exists in this semester
-      let existingCourse = await Course.findOne({
+      // Check if course already exists in this semester for this user
+      let existingCourse = await Course.findOne(buildUserFilter(req.userId, {
         semesterId: newSemesterId,
         courseCode: c.courseCode,
-      });
+      }));
 
       if (existingCourse) {
         coursesSkipped++;
@@ -287,6 +290,7 @@ export const importBackup = async (req: Request, res: Response): Promise<void> =
         }));
 
         const newCourse = await Course.create({
+          userId: req.userId,
           courseCode: c.courseCode,
           courseName: c.courseName,
           credit: c.credit || 3,
@@ -325,17 +329,18 @@ export const importBackup = async (req: Request, res: Response): Promise<void> =
         continue;
       }
 
-      // Business duplicate check: courseId + dateString + startTime
-      const existingInstance = await ClassInstance.findOne({
+      // Business duplicate check: courseId + dateString + startTime for this user
+      const existingInstance = await ClassInstance.findOne(buildUserFilter(req.userId, {
         courseId: newCourseId,
         dateString: inst.dateString,
         startTime: inst.startTime,
-      });
+      }));
 
       if (existingInstance) {
         classesSkipped++;
       } else {
         await ClassInstance.create({
+          userId: req.userId,
           courseId: newCourseId,
           semesterId: newSemesterId,
           scheduleId: newSchedId,
@@ -372,17 +377,18 @@ export const importBackup = async (req: Request, res: Response): Promise<void> =
         continue;
       }
 
-      // Duplicate check: semesterId + dateString + title
-      const existingEvent = await AcademicEvent.findOne({
+      // Duplicate check: semesterId + dateString + title for this user
+      const existingEvent = await AcademicEvent.findOne(buildUserFilter(req.userId, {
         semesterId: newSemesterId,
         dateString: ev.dateString,
         title: ev.title,
-      });
+      }));
 
       if (existingEvent) {
         eventsSkipped++;
       } else {
         await AcademicEvent.create({
+          userId: req.userId,
           title: ev.title,
           eventType: ev.eventType,
           date: ev.date ? new Date(ev.date) : new Date(ev.dateString),
@@ -422,14 +428,15 @@ export const exportAttendanceCsv = async (req: Request, res: Response): Promise<
   try {
     const { semesterId, courseId } = req.query;
 
-    const filter: Record<string, unknown> = {};
+    const baseFilter: Record<string, unknown> = {};
     if (semesterId && mongoose.Types.ObjectId.isValid(String(semesterId))) {
-      filter.semesterId = new mongoose.Types.ObjectId(String(semesterId));
+      baseFilter.semesterId = new mongoose.Types.ObjectId(String(semesterId));
     }
     if (courseId && mongoose.Types.ObjectId.isValid(String(courseId))) {
-      filter.courseId = new mongoose.Types.ObjectId(String(courseId));
+      baseFilter.courseId = new mongoose.Types.ObjectId(String(courseId));
     }
 
+    const filter = buildUserFilter(req.userId, baseFilter);
     const classes = await ClassInstance.find(filter)
       .populate('courseId', 'courseCode courseName')
       .populate('semesterId', 'name year term')
@@ -488,11 +495,12 @@ export const exportCoursesCsv = async (req: Request, res: Response): Promise<voi
   try {
     const { semesterId } = req.query;
 
-    const filter: Record<string, unknown> = {};
+    const baseFilter: Record<string, unknown> = {};
     if (semesterId && mongoose.Types.ObjectId.isValid(String(semesterId))) {
-      filter.semesterId = new mongoose.Types.ObjectId(String(semesterId));
+      baseFilter.semesterId = new mongoose.Types.ObjectId(String(semesterId));
     }
 
+    const filter = buildUserFilter(req.userId, baseFilter);
     const courses = await Course.find(filter)
       .populate('semesterId', 'name year term')
       .sort({ courseCode: 1 })
@@ -543,11 +551,12 @@ export const exportEventsCsv = async (req: Request, res: Response): Promise<void
   try {
     const { semesterId } = req.query;
 
-    const filter: Record<string, unknown> = {};
+    const baseFilter: Record<string, unknown> = {};
     if (semesterId && mongoose.Types.ObjectId.isValid(String(semesterId))) {
-      filter.semesterId = new mongoose.Types.ObjectId(String(semesterId));
+      baseFilter.semesterId = new mongoose.Types.ObjectId(String(semesterId));
     }
 
+    const filter = buildUserFilter(req.userId, baseFilter);
     const events = await AcademicEvent.find(filter)
       .populate('courseId', 'courseCode courseName')
       .populate('semesterId', 'name year term')
@@ -609,15 +618,15 @@ export const getSemesterSummary = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    const semester = await Semester.findById(semesterId).lean();
+    const semester = await Semester.findOne(buildUserFilter(req.userId, { _id: semesterId })).lean();
     if (!semester) {
       res.status(404).json({ success: false, message: 'Semester not found' });
       return;
     }
 
-    const courses = await Course.find({ semesterId, isArchived: { $ne: true } }).lean();
-    const classInstances = await ClassInstance.find({ semesterId }).lean();
-    const events = await AcademicEvent.find({ semesterId }).populate('courseId', 'courseCode courseName').sort({ date: 1 }).lean();
+    const courses = await Course.find(buildUserFilter(req.userId, { semesterId, isArchived: { $ne: true } })).lean();
+    const classInstances = await ClassInstance.find(buildUserFilter(req.userId, { semesterId })).lean();
+    const events = await AcademicEvent.find(buildUserFilter(req.userId, { semesterId })).populate('courseId', 'courseCode courseName').sort({ date: 1 }).lean();
 
     // Group class instances by course
     const courseStatsMap = new Map<string, any>();

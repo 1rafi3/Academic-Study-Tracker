@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { Semester } from '../models/Semester.js';
 import { Course } from '../models/Course.js';
 import { ClassInstance } from '../models/ClassInstance.js';
+import { buildUserFilter } from '../utils/queryHelper.js';
 
 export const createSemester = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -24,12 +25,13 @@ export const createSemester = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // If setting this semester as active, optionally unset other active semesters
+    // If setting this semester as active, optionally unset other active semesters for this user
     if (isActive) {
-      await Semester.updateMany({ isActive: true }, { isActive: false });
+      await Semester.updateMany(buildUserFilter(req.userId, { isActive: true }), { isActive: false });
     }
 
     const semester = await Semester.create({
+      userId: req.userId,
       name: String(name).trim(),
       year: Number(year),
       term,
@@ -62,20 +64,21 @@ export const createSemester = async (req: Request, res: Response): Promise<void>
 export const getSemesters = async (req: Request, res: Response): Promise<void> => {
   try {
     const { active, archived, all } = req.query;
-    const filter: Record<string, unknown> = {};
+    const baseFilter: Record<string, unknown> = {};
 
     if (active === 'true') {
-      filter.isActive = true;
+      baseFilter.isActive = true;
     }
 
     if (all !== 'true') {
       if (archived === 'true') {
-        filter.isArchived = true;
+        baseFilter.isArchived = true;
       } else {
-        filter.isArchived = { $ne: true };
+        baseFilter.isArchived = { $ne: true };
       }
     }
 
+    const filter = buildUserFilter(req.userId, baseFilter);
     const semesters = await Semester.find(filter).sort({ year: -1, startDate: -1 });
 
     res.status(200).json({
@@ -101,7 +104,7 @@ export const getSemesterById = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    const semester = await Semester.findById(id);
+    const semester = await Semester.findOne(buildUserFilter(req.userId, { _id: id }));
 
     if (!semester) {
       res.status(404).json({
@@ -143,7 +146,10 @@ export const updateSemester = async (req: Request, res: Response): Promise<void>
     }
 
     if (isActive === true) {
-      await Semester.updateMany({ _id: { $ne: id }, isActive: true }, { isActive: false });
+      await Semester.updateMany(
+        buildUserFilter(req.userId, { _id: { $ne: id }, isActive: true }),
+        { isActive: false }
+      );
     }
 
     const updateData: Record<string, unknown> = {};
@@ -155,10 +161,14 @@ export const updateSemester = async (req: Request, res: Response): Promise<void>
     if (isActive !== undefined) updateData.isActive = Boolean(isActive);
     if (isArchived !== undefined) updateData.isArchived = Boolean(isArchived);
 
-    const updatedSemester = await Semester.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true,
-    });
+    const updatedSemester = await Semester.findOneAndUpdate(
+      buildUserFilter(req.userId, { _id: id }),
+      updateData,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
 
     if (!updatedSemester) {
       res.status(404).json({
@@ -201,7 +211,7 @@ export const deleteSemester = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const semester = await Semester.findById(id);
+    const semester = await Semester.findOne(buildUserFilter(req.userId, { _id: id }));
     if (!semester) {
       res.status(404).json({
         success: false,
@@ -210,14 +220,14 @@ export const deleteSemester = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Check if courses or class instances exist for this semester
-    const courseCount = await Course.countDocuments({ semesterId: id });
-    const classCount = await ClassInstance.countDocuments({ semesterId: id });
+    // Check if courses or class instances exist for this semester belonging to this user
+    const courseCount = await Course.countDocuments(buildUserFilter(req.userId, { semesterId: id }));
+    const classCount = await ClassInstance.countDocuments(buildUserFilter(req.userId, { semesterId: id }));
 
     // If archiving requested or courses exist and not forced
     if (archive === 'true' || (courseCount > 0 && force !== 'true')) {
-      const archivedSemester = await Semester.findByIdAndUpdate(
-        id,
+      const archivedSemester = await Semester.findOneAndUpdate(
+        buildUserFilter(req.userId, { _id: id }),
         { isArchived: true, isActive: false },
         { new: true }
       );
@@ -231,7 +241,7 @@ export const deleteSemester = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const deletedSemester = await Semester.findByIdAndDelete(id);
+    const deletedSemester = await Semester.findOneAndDelete(buildUserFilter(req.userId, { _id: id }));
 
     res.status(200).json({
       success: true,

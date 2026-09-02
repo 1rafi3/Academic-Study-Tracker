@@ -3,6 +3,13 @@ import { ISemesterDocument } from '../types/academic.types.js';
 
 const semesterSchema = new Schema<ISemesterDocument>(
   {
+    userId: {
+      type: String,
+      required: false,
+      index: true,
+      default: null,
+      trim: true,
+    },
     name: {
       type: String,
       required: [true, 'Semester name is required'],
@@ -64,5 +71,7 @@ const semesterSchema = new Schema<ISemesterDocument>(
 // Index to query semesters efficiently by year and term
 semesterSchema.index({ year: -1, term: 1 });
 semesterSchema.index({ isActive: 1 });
+semesterSchema.index({ userId: 1, year: -1, term: 1 });
+semesterSchema.index({ userId: 1, isActive: 1 });
 
 export const Semester = model<ISemesterDocument>('Semester', semesterSchema);

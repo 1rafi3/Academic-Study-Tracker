@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useAuth } from './context/AuthContext.js';
+import { AuthScreen } from './components/auth/AuthScreen.js';
+import { LoadingScreen } from './components/auth/LoadingScreen.js';
+import { UserProfileMenu } from './components/auth/UserProfileMenu.js';
 import { CalendarDashboard } from './components/CalendarDashboard.js';
 import { CourseNotesTimeline } from './components/CourseNotesTimeline.js';
 import { AttendanceAnalytics } from './components/AttendanceAnalytics.js';
@@ -126,104 +130,109 @@ function MainDashboard() {
             </div>
           </div>
 
-          {/* Tab Navigation */}
-          <div className="flex flex-wrap items-center p-1 rounded-xl bg-slate-900 border border-slate-800 gap-0.5">
-            <button
-              id="tab-calendar-btn"
-              onClick={() => setActiveTab('calendar')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                activeTab === 'calendar'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <CalendarIcon className="w-3.5 h-3.5" />
-              Calendar
-            </button>
-            <button
-              id="tab-notes-btn"
-              onClick={() => setActiveTab('notes')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                activeTab === 'notes'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5" />
-              Study Notes
-            </button>
-            <button
-              id="tab-routine-btn"
-              onClick={() => setActiveTab('routine')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                activeTab === 'routine'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Clock className="w-3.5 h-3.5" />
-              Weekly Routine
-            </button>
-            <button
-              id="tab-analytics-btn"
-              onClick={() => setActiveTab('analytics')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                activeTab === 'analytics'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Target className="w-3.5 h-3.5" />
-              Analytics
-            </button>
-            <button
-              id="tab-backup-btn"
-              onClick={() => setActiveTab('backup')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                activeTab === 'backup'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Database className="w-3.5 h-3.5" />
-              Backup & Data
-            </button>
-            <button
-              id="tab-classes-btn"
-              onClick={() => setActiveTab('classes')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                activeTab === 'classes'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <CalendarCheck className="w-3.5 h-3.5" />
-              Classes
-            </button>
-            <button
-              id="tab-academic-btn"
-              onClick={() => setActiveTab('academic')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                activeTab === 'academic'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              Academic Setup
-            </button>
-            <button
-              id="tab-health-btn"
-              onClick={() => setActiveTab('health')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                activeTab === 'health'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Activity className="w-3.5 h-3.5" />
-              Diagnostics
-            </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Tab Navigation */}
+            <div className="flex flex-wrap items-center p-1 rounded-xl bg-slate-900 border border-slate-800 gap-0.5">
+              <button
+                id="tab-calendar-btn"
+                onClick={() => setActiveTab('calendar')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                  activeTab === 'calendar'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <CalendarIcon className="w-3.5 h-3.5" />
+                Calendar
+              </button>
+              <button
+                id="tab-notes-btn"
+                onClick={() => setActiveTab('notes')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                  activeTab === 'notes'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                Study Notes
+              </button>
+              <button
+                id="tab-routine-btn"
+                onClick={() => setActiveTab('routine')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                  activeTab === 'routine'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5" />
+                Weekly Routine
+              </button>
+              <button
+                id="tab-analytics-btn"
+                onClick={() => setActiveTab('analytics')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                  activeTab === 'analytics'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Target className="w-3.5 h-3.5" />
+                Analytics
+              </button>
+              <button
+                id="tab-backup-btn"
+                onClick={() => setActiveTab('backup')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                  activeTab === 'backup'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Database className="w-3.5 h-3.5" />
+                Backup & Data
+              </button>
+              <button
+                id="tab-classes-btn"
+                onClick={() => setActiveTab('classes')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                  activeTab === 'classes'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <CalendarCheck className="w-3.5 h-3.5" />
+                Classes
+              </button>
+              <button
+                id="tab-academic-btn"
+                onClick={() => setActiveTab('academic')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                  activeTab === 'academic'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                Academic Setup
+              </button>
+              <button
+                id="tab-health-btn"
+                onClick={() => setActiveTab('health')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                  activeTab === 'health'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Activity className="w-3.5 h-3.5" />
+                Diagnostics
+              </button>
+            </div>
+
+            {/* Authenticated User Profile Dropdown */}
+            <UserProfileMenu />
           </div>
         </header>
 
@@ -449,6 +458,23 @@ function MainDashboard() {
 }
 
 export function App() {
+  const { isLoading, isAuthenticated } = useAuth();
+
+  // Security hardening: Purge all cached academic queries upon logout or session termination
+  useEffect(() => {
+    if (!isAuthenticated) {
+      queryClient.clear();
+    }
+  }, [isAuthenticated]);
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  if (!isAuthenticated) {
+    return <AuthScreen />;
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <MainDashboard />

@@ -13,6 +13,7 @@ import {
   OverallAttendanceStats,
 } from '../types/academic.types.js';
 import { getBangladeshHoliday } from '../utils/bangladeshHolidays.js';
+import { buildUserFilter } from '../utils/queryHelper.js';
 
 // Helper to format Date to YYYY-MM-DD in UTC
 export const formatDateToUTCString = (date: Date): string => {
@@ -49,11 +50,11 @@ export const generateClassInstances = async (req: Request, res: Response): Promi
       return;
     }
 
-    const semester = await Semester.findById(semesterId);
+    const semester = await Semester.findOne(buildUserFilter(req.userId, { _id: semesterId }));
     if (!semester) {
       res.status(404).json({
         success: false,
-        message: 'Semester not found',
+        message: 'Semester not found or does not belong to you',
       });
       return;
     }
@@ -73,7 +74,7 @@ export const generateClassInstances = async (req: Request, res: Response): Promi
       courseFilter._id = courseId;
     }
 
-    const courses = await Course.find(courseFilter);
+    const courses = await Course.find(buildUserFilter(req.userId, courseFilter));
     if (courses.length === 0) {
       res.status(200).json({
         success: true,
@@ -121,6 +122,7 @@ export const generateClassInstances = async (req: Request, res: Response): Promi
                 },
                 update: {
                   $setOnInsert: {
+                    userId: req.userId,
                     courseId: course._id,
                     semesterId: semester._id,
                     scheduleId: schedule._id,
@@ -180,14 +182,14 @@ export const generateClassInstances = async (req: Request, res: Response): Promi
 export const getClassInstances = async (req: Request, res: Response): Promise<void> => {
   try {
     const { semesterId, courseId, date, startDate, endDate, status, limit } = req.query;
-    const filter: Record<string, unknown> = {};
+    const baseFilter: Record<string, unknown> = {};
 
     if (semesterId) {
       if (!mongoose.Types.ObjectId.isValid(String(semesterId))) {
         res.status(400).json({ success: false, message: 'Invalid semester ID format' });
         return;
       }
-      filter.semesterId = semesterId;
+      baseFilter.semesterId = semesterId;
     }
 
     if (courseId) {
@@ -195,7 +197,7 @@ export const getClassInstances = async (req: Request, res: Response): Promise<vo
         res.status(400).json({ success: false, message: 'Invalid course ID format' });
         return;
       }
-      filter.courseId = courseId;
+      baseFilter.courseId = courseId;
     }
 
     if (status) {
@@ -206,19 +208,20 @@ export const getClassInstances = async (req: Request, res: Response): Promise<vo
         });
         return;
       }
-      filter.attendanceStatus = status;
+      baseFilter.attendanceStatus = status;
     }
 
     if (date) {
       const parsed = normalizeToUTCMidnight(String(date));
-      filter.date = parsed;
+      baseFilter.date = parsed;
     } else if (startDate || endDate) {
       const dateRange: Record<string, Date> = {};
       if (startDate) dateRange.$gte = normalizeToUTCMidnight(String(startDate));
       if (endDate) dateRange.$lte = normalizeToUTCMidnight(String(endDate));
-      filter.date = dateRange;
+      baseFilter.date = dateRange;
     }
 
+    const filter = buildUserFilter(req.userId, baseFilter);
     let query = ClassInstance.find(filter)
       .populate('courseId', 'courseCode courseName color instructor')
       .populate('semesterId', 'name year term isActive')
@@ -253,7 +256,7 @@ export const getClassInstanceById = async (req: Request, res: Response): Promise
       return;
     }
 
-    const instance = await ClassInstance.findById(id)
+    const instance = await ClassInstance.findOne(buildUserFilter(req.userId, { _id: id }))
       .populate('courseId', 'courseCode courseName color instructor credit')
       .populate('semesterId', 'name year term isActive');
 
@@ -290,8 +293,8 @@ export const updateAttendance = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const updated = await ClassInstance.findByIdAndUpdate(
-      id,
+    const updated = await ClassInstance.findOneAndUpdate(
+      buildUserFilter(req.userId, { _id: id }),
       { attendanceStatus: status },
       { new: true, runValidators: true }
     ).populate('courseId', 'courseCode courseName color instructor');
@@ -324,13 +327,13 @@ export const getAttendanceStats = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    const filter: Record<string, unknown> = {};
+    const baseFilter: Record<string, unknown> = {};
     if (semesterId) {
       if (!mongoose.Types.ObjectId.isValid(String(semesterId))) {
         res.status(400).json({ success: false, message: 'Invalid semester ID format' });
         return;
       }
-      filter.semesterId = new mongoose.Types.ObjectId(String(semesterId));
+      baseFilter.semesterId = new mongoose.Types.ObjectId(String(semesterId));
     }
 
     if (courseId) {
@@ -338,8 +341,10 @@ export const getAttendanceStats = async (req: Request, res: Response): Promise<v
         res.status(400).json({ success: false, message: 'Invalid course ID format' });
         return;
       }
-      filter.courseId = new mongoose.Types.ObjectId(String(courseId));
+      baseFilter.courseId = new mongoose.Types.ObjectId(String(courseId));
     }
+
+    const filter = buildUserFilter(req.userId, baseFilter);
 
     // Aggregation pipeline to count attendance statuses grouped by course and class lifecycle status
     const aggregationResult = await ClassInstance.aggregate([
@@ -361,7 +366,7 @@ export const getAttendanceStats = async (req: Request, res: Response): Promise<v
       new Set(aggregationResult.map((item) => item._id.courseId.toString()))
     );
 
-    const courses = await Course.find({ _id: { $in: matchedCourseIds } });
+    const courses = await Course.find(buildUserFilter(req.userId, { _id: { $in: matchedCourseIds } }));
     const courseMap = new Map(courses.map((c) => [c._id.toString(), c]));
 
     // Aggregate stats per course
@@ -456,7 +461,7 @@ export const deleteClassInstance = async (req: Request, res: Response): Promise<
       return;
     }
 
-    const deleted = await ClassInstance.findByIdAndDelete(id);
+    const deleted = await ClassInstance.findOneAndDelete(buildUserFilter(req.userId, { _id: id }));
 
     if (!deleted) {
       res.status(404).json({ success: false, message: 'Class instance not found' });
@@ -492,8 +497,8 @@ export const updateClassNotes = async (req: Request, res: Response): Promise<voi
       updateFields.homeworkDetails = typeof homeworkDetails === 'string' ? homeworkDetails.trim() : '';
     }
 
-    const updated = await ClassInstance.findByIdAndUpdate(
-      id,
+    const updated = await ClassInstance.findOneAndUpdate(
+      buildUserFilter(req.userId, { _id: id }),
       { $set: updateFields },
       { new: true, runValidators: true }
     )
@@ -548,8 +553,8 @@ export const updateClassStatus = async (req: Request, res: Response): Promise<vo
       updateFields.holidayName = typeof holidayName === 'string' ? holidayName.trim() : '';
     }
 
-    const updated = await ClassInstance.findByIdAndUpdate(
-      id,
+    const updated = await ClassInstance.findOneAndUpdate(
+      buildUserFilter(req.userId, { _id: id }),
       { $set: updateFields },
       { new: true, runValidators: true }
     )

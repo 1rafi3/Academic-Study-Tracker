@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { Course } from '../models/Course.js';
 import { Semester } from '../models/Semester.js';
 import { ClassInstance } from '../models/ClassInstance.js';
+import { buildUserFilter } from '../utils/queryHelper.js';
 
 export const createCourse = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -24,17 +25,18 @@ export const createCourse = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Verify referenced semester actually exists
-    const semesterExists = await Semester.findById(semesterId);
+    // Verify referenced semester actually exists AND belongs to the authenticated user
+    const semesterExists = await Semester.findOne(buildUserFilter(req.userId, { _id: semesterId }));
     if (!semesterExists) {
       res.status(400).json({
         success: false,
-        message: 'Referenced semester does not exist',
+        message: 'Referenced semester does not exist or does not belong to you',
       });
       return;
     }
 
     const course = await Course.create({
+      userId: req.userId,
       courseCode: String(courseCode).trim().toUpperCase(),
       courseName: String(courseName).trim(),
       credit: credit !== undefined ? Number(credit) : 3.0,
@@ -78,7 +80,7 @@ export const createCourse = async (req: Request, res: Response): Promise<void> =
 export const getCourses = async (req: Request, res: Response): Promise<void> => {
   try {
     const { semesterId, archived, all } = req.query;
-    const filter: Record<string, unknown> = {};
+    const baseFilter: Record<string, unknown> = {};
 
     if (semesterId) {
       if (!mongoose.Types.ObjectId.isValid(String(semesterId))) {
@@ -88,18 +90,19 @@ export const getCourses = async (req: Request, res: Response): Promise<void> => 
         });
         return;
       }
-      filter.semesterId = semesterId;
+      baseFilter.semesterId = semesterId;
     }
 
     // Filter archived courses
     if (all !== 'true') {
       if (archived === 'true') {
-        filter.isArchived = true;
+        baseFilter.isArchived = true;
       } else {
-        filter.isArchived = { $ne: true };
+        baseFilter.isArchived = { $ne: true };
       }
     }
 
+    const filter = buildUserFilter(req.userId, baseFilter);
     const courses = await Course.find(filter)
       .populate('semesterId', 'name year term isActive')
       .sort({ courseCode: 1 });
@@ -127,7 +130,7 @@ export const getCourseById = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    const course = await Course.findById(id).populate('semesterId', 'name year term isActive');
+    const course = await Course.findOne(buildUserFilter(req.userId, { _id: id })).populate('semesterId', 'name year term isActive');
 
     if (!course) {
       res.status(404).json({
@@ -168,11 +171,11 @@ export const updateCourse = async (req: Request, res: Response): Promise<void> =
         });
         return;
       }
-      const semesterExists = await Semester.findById(semesterId);
+      const semesterExists = await Semester.findOne(buildUserFilter(req.userId, { _id: semesterId }));
       if (!semesterExists) {
         res.status(400).json({
           success: false,
-          message: 'Referenced semester does not exist',
+          message: 'Referenced semester does not exist or does not belong to you',
         });
         return;
       }
@@ -189,10 +192,14 @@ export const updateCourse = async (req: Request, res: Response): Promise<void> =
     if (schedules !== undefined && Array.isArray(schedules)) updateData.schedules = schedules;
     if (isArchived !== undefined) updateData.isArchived = Boolean(isArchived);
 
-    const updatedCourse = await Course.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true,
-    }).populate('semesterId', 'name year term isActive');
+    const updatedCourse = await Course.findOneAndUpdate(
+      buildUserFilter(req.userId, { _id: id }),
+      updateData,
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).populate('semesterId', 'name year term isActive');
 
     if (!updatedCourse) {
       res.status(404).json({
@@ -244,7 +251,7 @@ export const deleteCourse = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    const course = await Course.findById(id);
+    const course = await Course.findOne(buildUserFilter(req.userId, { _id: id }));
     if (!course) {
       res.status(404).json({
         success: false,
@@ -253,13 +260,13 @@ export const deleteCourse = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Check if class instances / attendance history exist for this course
-    const classCount = await ClassInstance.countDocuments({ courseId: id });
+    // Check if class instances / attendance history exist for this course belonging to this user
+    const classCount = await ClassInstance.countDocuments(buildUserFilter(req.userId, { courseId: id }));
 
     if (classCount > 0 && force !== 'true') {
       // Safe Archive strategy: Hide from active lists while preserving all class instance & attendance history
-      const archivedCourse = await Course.findByIdAndUpdate(
-        id,
+      const archivedCourse = await Course.findOneAndUpdate(
+        buildUserFilter(req.userId, { _id: id }),
         { isArchived: true },
         { new: true }
       ).populate('semesterId', 'name year term isActive');
@@ -274,7 +281,8 @@ export const deleteCourse = async (req: Request, res: Response): Promise<void> =
     }
 
     // If no class instances exist or force delete is explicitly requested
-    const deletedCourse = await Course.findByIdAndDelete(id);
+    const deletedCourse = await Course.findOneAndDelete(buildUserFilter(req.userId, { _id: id }));
+    await ClassInstance.deleteMany(buildUserFilter(req.userId, { courseId: id }));
 
     res.status(200).json({
       success: true,

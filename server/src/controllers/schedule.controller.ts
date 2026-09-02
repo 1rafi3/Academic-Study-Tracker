@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { Course } from '../models/Course.js';
 import { DAYS_OF_WEEK, DayOfWeek } from '../types/academic.types.js';
+import { buildUserFilter } from '../utils/queryHelper.js';
 
 const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
 
@@ -17,7 +18,7 @@ export const getSchedules = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    const course = await Course.findById(courseId);
+    const course = await Course.findOne(buildUserFilter(req.userId, { _id: courseId }));
 
     if (!course) {
       res.status(404).json({
@@ -83,7 +84,7 @@ export const addSchedule = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    const course = await Course.findById(courseId);
+    const course = await Course.findOne(buildUserFilter(req.userId, { _id: courseId }));
 
     if (!course) {
       res.status(404).json({
@@ -140,7 +141,7 @@ export const updateSchedule = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const course = await Course.findById(courseId);
+    const course = await Course.findOne(buildUserFilter(req.userId, { _id: courseId }));
 
     if (!course) {
       res.status(404).json({
@@ -242,7 +243,7 @@ export const deleteSchedule = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const course = await Course.findById(courseId);
+    const course = await Course.findOne(buildUserFilter(req.userId, { _id: courseId }));
 
     if (!course) {
       res.status(404).json({

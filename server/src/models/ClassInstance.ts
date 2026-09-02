@@ -8,6 +8,13 @@ import {
 
 const classInstanceSchema = new Schema<IClassInstanceDocument>(
   {
+    userId: {
+      type: String,
+      required: false,
+      index: true,
+      default: null,
+      trim: true,
+    },
     courseId: {
       type: Schema.Types.ObjectId,
       ref: 'Course',
@@ -127,5 +134,9 @@ classInstanceSchema.index({ semesterId: 1, date: 1 });
 
 // Compound index for fast course-level attendance status counting
 classInstanceSchema.index({ courseId: 1, attendanceStatus: 1 });
+
+// User-scoped compound indexes
+classInstanceSchema.index({ userId: 1, semesterId: 1, date: 1 });
+classInstanceSchema.index({ userId: 1, courseId: 1 });
 
 export const ClassInstance = model<IClassInstanceDocument>('ClassInstance', classInstanceSchema);

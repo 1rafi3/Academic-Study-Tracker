@@ -4,6 +4,7 @@ import { AcademicEvent } from '../models/AcademicEvent.js';
 import { Semester } from '../models/Semester.js';
 import { Course } from '../models/Course.js';
 import { ACADEMIC_EVENT_TYPES, AcademicEventType } from '../types/academic.types.js';
+import { buildUserFilter } from '../utils/queryHelper.js';
 
 // Safe date normalization helper to UTC midnight
 const normalizeToUTCMidnight = (d: Date | string): Date => {
@@ -24,21 +25,21 @@ export const getAcademicEvents = async (req: Request, res: Response): Promise<vo
   try {
     const { semesterId, courseId, startDate, endDate, date } = req.query;
 
-    const filter: Record<string, unknown> = {};
+    const baseFilter: Record<string, unknown> = {};
 
     if (semesterId) {
       if (!mongoose.Types.ObjectId.isValid(String(semesterId))) {
         res.status(400).json({ success: false, message: 'Invalid semester ID format' });
         return;
       }
-      filter.semesterId = new mongoose.Types.ObjectId(String(semesterId));
+      baseFilter.semesterId = new mongoose.Types.ObjectId(String(semesterId));
     }
 
     if (courseId) {
       if (courseId === 'general') {
-        filter.courseId = null;
+        baseFilter.courseId = null;
       } else if (mongoose.Types.ObjectId.isValid(String(courseId))) {
-        filter.courseId = new mongoose.Types.ObjectId(String(courseId));
+        baseFilter.courseId = new mongoose.Types.ObjectId(String(courseId));
       } else {
         res.status(400).json({ success: false, message: 'Invalid course ID format' });
         return;
@@ -46,7 +47,7 @@ export const getAcademicEvents = async (req: Request, res: Response): Promise<vo
     }
 
     if (date) {
-      filter.dateString = String(date);
+      baseFilter.dateString = String(date);
     } else if (startDate || endDate) {
       const dateFilter: Record<string, Date> = {};
       if (startDate) {
@@ -55,9 +56,10 @@ export const getAcademicEvents = async (req: Request, res: Response): Promise<vo
       if (endDate) {
         dateFilter.$lte = normalizeToUTCMidnight(String(endDate));
       }
-      filter.date = dateFilter;
+      baseFilter.date = dateFilter;
     }
 
+    const filter = buildUserFilter(req.userId, baseFilter);
     const events = await AcademicEvent.find(filter)
       .populate('courseId', 'courseCode courseName color instructor')
       .populate('semesterId', 'name year term isActive')
@@ -83,7 +85,7 @@ export const getAcademicEventById = async (req: Request, res: Response): Promise
       return;
     }
 
-    const event = await AcademicEvent.findById(id)
+    const event = await AcademicEvent.findOne(buildUserFilter(req.userId, { _id: id }))
       .populate('courseId', 'courseCode courseName color instructor')
       .populate('semesterId', 'name year term isActive');
 
@@ -136,23 +138,23 @@ export const createAcademicEvent = async (req: Request, res: Response): Promise<
       return;
     }
 
-    // Verify semester exists
-    const semester = await Semester.findById(semesterId);
+    // Verify semester exists and belongs to this user
+    const semester = await Semester.findOne(buildUserFilter(req.userId, { _id: semesterId }));
     if (!semester) {
-      res.status(404).json({ success: false, message: 'Referenced semester does not exist' });
+      res.status(404).json({ success: false, message: 'Referenced semester does not exist or does not belong to you' });
       return;
     }
 
-    // Verify course exists if provided
+    // Verify course exists and belongs to this user if provided
     let finalCourseId: mongoose.Types.ObjectId | null = null;
     if (courseId) {
       if (!mongoose.Types.ObjectId.isValid(String(courseId))) {
         res.status(400).json({ success: false, message: 'Invalid course ID format' });
         return;
       }
-      const course = await Course.findById(courseId);
+      const course = await Course.findOne(buildUserFilter(req.userId, { _id: courseId }));
       if (!course) {
-        res.status(404).json({ success: false, message: 'Referenced course does not exist' });
+        res.status(404).json({ success: false, message: 'Referenced course does not exist or does not belong to you' });
         return;
       }
       finalCourseId = course._id;
@@ -178,6 +180,7 @@ export const createAcademicEvent = async (req: Request, res: Response): Promise<
     }
 
     const newEvent = await AcademicEvent.create({
+      userId: req.userId,
       title: title.trim(),
       eventType,
       date: eventDate,
@@ -190,7 +193,7 @@ export const createAcademicEvent = async (req: Request, res: Response): Promise<
       description: typeof description === 'string' ? description.trim() : '',
     });
 
-    const populated = await AcademicEvent.findById(newEvent._id)
+    const populated = await AcademicEvent.findOne(buildUserFilter(req.userId, { _id: newEvent._id }))
       .populate('courseId', 'courseCode courseName color instructor')
       .populate('semesterId', 'name year term isActive');
 
@@ -262,9 +265,9 @@ export const updateAcademicEvent = async (req: Request, res: Response): Promise<
       if (courseId === null || courseId === '') {
         updateFields.courseId = null;
       } else if (mongoose.Types.ObjectId.isValid(String(courseId))) {
-        const course = await Course.findById(courseId);
+        const course = await Course.findOne(buildUserFilter(req.userId, { _id: courseId }));
         if (!course) {
-          res.status(404).json({ success: false, message: 'Referenced course does not exist' });
+          res.status(404).json({ success: false, message: 'Referenced course does not exist or does not belong to you' });
           return;
         }
         updateFields.courseId = course._id;
@@ -279,8 +282,8 @@ export const updateAcademicEvent = async (req: Request, res: Response): Promise<
     if (room !== undefined) updateFields.room = typeof room === 'string' ? room.trim() : '';
     if (description !== undefined) updateFields.description = typeof description === 'string' ? description.trim() : '';
 
-    const updated = await AcademicEvent.findByIdAndUpdate(
-      id,
+    const updated = await AcademicEvent.findOneAndUpdate(
+      buildUserFilter(req.userId, { _id: id }),
       { $set: updateFields },
       { new: true, runValidators: true }
     )
@@ -312,7 +315,7 @@ export const deleteAcademicEvent = async (req: Request, res: Response): Promise<
       return;
     }
 
-    const deleted = await AcademicEvent.findByIdAndDelete(id);
+    const deleted = await AcademicEvent.findOneAndDelete(buildUserFilter(req.userId, { _id: id }));
 
     if (!deleted) {
       res.status(404).json({ success: false, message: 'Academic event not found' });
