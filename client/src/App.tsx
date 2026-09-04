@@ -4,6 +4,7 @@ import { useAuth } from './context/AuthContext.js';
 import { AuthScreen } from './components/auth/AuthScreen.js';
 import { LoadingScreen } from './components/auth/LoadingScreen.js';
 import { UserProfileMenu } from './components/auth/UserProfileMenu.js';
+import { useKeepAlive } from './hooks/useKeepAlive.js';
 import { CalendarDashboard } from './components/CalendarDashboard.js';
 import { CourseNotesTimeline } from './components/CourseNotesTimeline.js';
 import { AttendanceAnalytics } from './components/AttendanceAnalytics.js';
@@ -287,6 +288,9 @@ function MainDashboard() {
 
 export function App() {
   const { isLoading, isAuthenticated } = useAuth();
+
+  // Keep Render free-tier backend alive by pinging /api/health every 10 minutes
+  useKeepAlive();
 
   // Security hardening: Purge all cached academic queries upon logout or session termination
   useEffect(() => {
