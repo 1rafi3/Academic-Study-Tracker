@@ -1,8 +1,12 @@
 import { createJWT } from '../services/appwrite.js';
 import type { ApiResponse } from '../types/academic.js';
 
-// Base API URL
-export const API_BASE = '/api';
+// Base API URL: Supports VITE_API_URL for production deployments (e.g. Vercel + Render),
+// falling back to local Vite proxy '/api' when not configured.
+export const API_BASE = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace(/\/$/, '')
+  : '/api';
+
 
 // In-memory token cache to prevent redundant createJWT requests on rapid concurrent queries
 let cachedJWT: string | null = null;

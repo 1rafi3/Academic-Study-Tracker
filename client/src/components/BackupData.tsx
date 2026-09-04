@@ -58,6 +58,12 @@ export const BackupData: React.FC<Props> = ({
     queryFn: () => semesterApi.getAll(),
   });
 
+  // Check if unassigned legacy records exist from pre-auth
+  const { data: legacyStatus } = useQuery({
+    queryKey: ['legacy-status'],
+    queryFn: () => authApi.getLegacyStatus(),
+  });
+
   const activeSemester = useMemo(() => {
     if (selectedSemesterId) {
       return semesters.find((s) => s._id === selectedSemesterId) || null;
@@ -102,7 +108,13 @@ export const BackupData: React.FC<Props> = ({
     setFileError(null);
     try {
       const text = await file.text();
-      const parsed: IBackupPayload = JSON.parse(text);
+      let parsed: IBackupPayload;
+      try {
+        parsed = JSON.parse(text);
+      } catch (jsonErr: unknown) {
+        setFileError('Invalid JSON format: The selected file is not a valid JSON document.');
+        return;
+      }
 
       const validation = await backupApi.validateBackup(parsed);
       setBackupPayload(parsed);
@@ -110,8 +122,8 @@ export const BackupData: React.FC<Props> = ({
       setIsImportModalOpen(true);
     } catch (err: unknown) {
       setFileError(
-        `Failed to parse backup file. Please ensure it is a valid JSON file: ${
-          err instanceof Error ? err.message : 'Invalid JSON'
+        `Failed to process backup file: ${
+          err instanceof Error ? err.message : 'Server error occurred'
         }`
       );
     } finally {
@@ -321,43 +333,45 @@ export const BackupData: React.FC<Props> = ({
           </button>
         </div>
 
-        {/* Card 5: One-Time Legacy Data Migration */}
-        <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg flex flex-col justify-between space-y-4 md:col-span-2">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="p-2.5 rounded-xl bg-amber-950/80 border border-amber-700/60 text-amber-400">
-                <ShieldCheck className="w-5 h-5" />
+        {/* Card 5: One-Time Legacy Data Migration (Only visible if unclaimed pre-auth records exist) */}
+        {legacyStatus?.hasUnclaimedData && (
+          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg flex flex-col justify-between space-y-4 md:col-span-2">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="p-2.5 rounded-xl bg-amber-950/80 border border-amber-700/60 text-amber-400">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-950 border border-amber-700/50 text-amber-300 font-bold uppercase tracking-wider">
+                  Account Ownership
+                </span>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-950 border border-amber-700/50 text-amber-300 font-bold uppercase tracking-wider">
-                Account Ownership
-              </span>
+
+              <h3 className="text-base font-bold text-slate-100">Claim Existing Academic Data</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                If you used Academic Tracker before multi-user authentication was introduced, safely link your existing semesters, courses, routine instances, study notes, and events directly to your authenticated account.
+              </p>
             </div>
 
-            <h3 className="text-base font-bold text-slate-100">Claim Existing Academic Data</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              If you used Academic Tracker before multi-user authentication was introduced, safely link your existing semesters, courses, routine instances, study notes, and events directly to your authenticated account.
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/80">
+              <span className="text-xs text-slate-400">
+                Safe &bull; Idempotent &bull; Never deletes or overwrites existing records
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setClaimError(null);
+                  setClaimResult(null);
+                  setMigrationSecret('');
+                  setIsClaimModalOpen(true);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white text-xs font-bold shadow-md shadow-amber-600/20 transition cursor-pointer"
+              >
+                <KeyRound className="w-4 h-4" />
+                Claim Existing Academic Data
+              </button>
+            </div>
           </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/80">
-            <span className="text-xs text-slate-400">
-              Safe &bull; Idempotent &bull; Never deletes or overwrites existing records
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                setClaimError(null);
-                setClaimResult(null);
-                setMigrationSecret('');
-                setIsClaimModalOpen(true);
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white text-xs font-bold shadow-md shadow-amber-600/20 transition cursor-pointer"
-            >
-              <KeyRound className="w-4 h-4" />
-              Claim Existing Academic Data
-            </button>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Claim Legacy Data Modal */}

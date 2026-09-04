@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuth } from './context/AuthContext.js';
 import { AuthScreen } from './components/auth/AuthScreen.js';
@@ -14,11 +14,7 @@ import { CourseManager } from './components/CourseManager.js';
 import { ScheduleManager } from './components/ScheduleManager.js';
 import { ClassInstanceManager } from './components/ClassInstanceManager.js';
 import { 
-  Activity, 
   Database, 
-  Server, 
-  Globe, 
-  RefreshCw, 
   Layers, 
   GraduationCap,
   BookOpen,
@@ -38,62 +34,10 @@ const queryClient = new QueryClient({
   },
 });
 
-interface HealthResponse {
-  status: string;
-  message: string;
-  service: string;
-  uptimeSeconds: number;
-  timestamp: string;
-  environment: string;
-  database: {
-    status: 'connected' | 'disconnected' | 'connecting' | 'error';
-    error: string | null;
-    host: string | null;
-    database: string | null;
-  };
-}
-
 function MainDashboard() {
-  const [activeTab, setActiveTab] = useState<'calendar' | 'notes' | 'routine' | 'analytics' | 'backup' | 'classes' | 'academic' | 'health'>('calendar');
+  const [activeTab, setActiveTab] = useState<'calendar' | 'notes' | 'routine' | 'analytics' | 'backup' | 'classes' | 'academic'>('calendar');
   const [selectedSemesterId, setSelectedSemesterId] = useState<string | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
-
-  // Health State
-  const [healthData, setHealthData] = useState<HealthResponse | null>(null);
-  const [healthLoading, setHealthLoading] = useState<boolean>(false);
-  const [healthError, setHealthError] = useState<string | null>(null);
-  const [latency, setLatency] = useState<number | null>(null);
-  const [lastChecked, setLastChecked] = useState<Date | null>(null);
-
-  const fetchHealth = useCallback(async () => {
-    setHealthLoading(true);
-    setHealthError(null);
-    const startTime = performance.now();
-
-    try {
-      const response = await fetch('/api/health');
-      const endTime = performance.now();
-      setLatency(Math.round(endTime - startTime));
-
-      if (!response.ok) {
-        throw new Error(`Server returned status HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data: HealthResponse = await response.json();
-      setHealthData(data);
-      setLastChecked(new Date());
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to reach backend server';
-      setHealthError(msg);
-      setHealthData(null);
-    } finally {
-      setHealthLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchHealth();
-  }, [fetchHealth]);
 
   const handleSelectSemester = (id: string | null) => {
     setSelectedSemesterId(id);
@@ -120,12 +64,9 @@ function MainDashboard() {
                 <h1 className="text-xl font-bold tracking-tight text-slate-100">
                   Academic Study Tracker
                 </h1>
-                <span className="px-2 py-0.5 rounded-full bg-indigo-950 border border-indigo-700/50 text-indigo-300 text-[10px] font-semibold uppercase tracking-wider">
-                  Phase 9
-                </span>
               </div>
               <p className="text-xs text-slate-400">
-                Calendar &bull; Study Notes &bull; Weekly Routine &bull; Analytics &bull; Schedule &bull; Backup & Exports
+                Calendar &bull; Study Notes &bull; Weekly Routine &bull; Attendance Analytics &bull; Course Setup
               </p>
             </div>
           </div>
@@ -216,18 +157,6 @@ function MainDashboard() {
               >
                 <BookOpen className="w-3.5 h-3.5" />
                 Academic Setup
-              </button>
-              <button
-                id="tab-health-btn"
-                onClick={() => setActiveTab('health')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                  activeTab === 'health'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Activity className="w-3.5 h-3.5" />
-                Diagnostics
               </button>
             </div>
 
@@ -347,110 +276,9 @@ function MainDashboard() {
           </main>
         )}
 
-        {/* Tab 5: System Health Diagnostics */}
-        {activeTab === 'health' && (
-          <main className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-400 uppercase">Frontend</span>
-                  <Globe className="w-4 h-4 text-blue-400" />
-                </div>
-                <p className="text-xl font-bold text-slate-100 mt-2">Vite + React</p>
-                <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1 font-medium">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse" /> Operational
-                </p>
-              </div>
-
-              <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-400 uppercase">Backend API</span>
-                  <Server className="w-4 h-4 text-indigo-400" />
-                </div>
-                <p className="text-xl font-bold text-slate-100 mt-2">Node / Express</p>
-                {healthLoading ? (
-                  <p className="text-xs text-slate-400 mt-1">Checking health...</p>
-                ) : healthError ? (
-                  <p className="text-xs text-rose-400 mt-1 font-medium">{healthError}</p>
-                ) : (
-                  <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1 font-medium">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" /> {healthData?.status === 'ok' ? 'Healthy' : 'Degraded'}
-                    {latency !== null && <span className="text-slate-400 font-normal">({latency}ms)</span>}
-                  </p>
-                )}
-              </div>
-
-              <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-400 uppercase">Database</span>
-                  <Database className="w-4 h-4 text-emerald-400" />
-                </div>
-                <p className="text-xl font-bold text-slate-100 mt-2">MongoDB Atlas</p>
-                {healthLoading ? (
-                  <p className="text-xs text-slate-400 mt-1">Connecting...</p>
-                ) : healthData?.database?.status === 'connected' ? (
-                  <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1 font-medium">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" /> Connected
-                    <span className="text-slate-400 font-normal truncate max-w-[120px]">({healthData.database.database || 'academic_tracker'})</span>
-                  </p>
-                ) : (
-                  <p className="text-xs text-amber-400 mt-1 font-medium">
-                    {healthData?.database?.status || 'Disconnected'}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Diagnostic Details */}
-            <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-indigo-400" />
-                  Live Diagnostics
-                </h3>
-                <button
-                  onClick={fetchHealth}
-                  disabled={healthLoading}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 text-xs font-medium transition cursor-pointer disabled:opacity-50"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${healthLoading ? 'animate-spin' : ''}`} />
-                  Refresh
-                </button>
-              </div>
-
-              {healthData && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                    <span className="text-slate-500 block">Service</span>
-                    <span className="text-slate-200 font-mono font-medium">{healthData.service}</span>
-                  </div>
-                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                    <span className="text-slate-500 block">Environment</span>
-                    <span className="text-slate-200 font-mono font-medium">{healthData.environment}</span>
-                  </div>
-                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                    <span className="text-slate-500 block">Uptime</span>
-                    <span className="text-slate-200 font-mono font-medium">{Math.floor(healthData.uptimeSeconds / 60)}m {Math.floor(healthData.uptimeSeconds % 60)}s</span>
-                  </div>
-                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                    <span className="text-slate-500 block">Host Shard</span>
-                    <span className="text-slate-200 font-mono font-medium truncate block">{healthData.database.host || 'Atlas'}</span>
-                  </div>
-                </div>
-              )}
-
-              {lastChecked && (
-                <p className="text-[11px] text-slate-500 text-right">
-                  Last checked: {lastChecked.toLocaleTimeString()}
-                </p>
-              )}
-            </div>
-          </main>
-        )}
-
         {/* Footer */}
         <footer className="border-t border-slate-800/80 pt-4 text-center text-xs text-slate-500 print:hidden">
-          <p>Academic Study Tracker &bull; Phase 5 &bull; Built with React, Vite, Node.js, Express & MongoDB Atlas</p>
+          <p>Academic Study Tracker &bull; Your All-in-One University Companion</p>
         </footer>
       </div>
     </div>

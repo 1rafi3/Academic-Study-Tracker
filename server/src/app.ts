@@ -48,8 +48,9 @@ app.use(
   })
 );
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Body parsers with 50MB payload limit for full database backups & imports
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Routes
 app.use('/api', healthRoutes);
@@ -62,14 +63,31 @@ app.use('/api/academic-events', requireAuth, academicEventRoutes);
 app.use('/api/analytics', requireAuth, analyticsRoutes);
 app.use('/api/backup', requireAuth, backupRoutes);
 
-
-
 // Root fallback
 app.get('/', (req, res) => {
   res.json({
     message: 'Academic Study Tracker API Root',
     healthCheck: '/api/health',
   });
+});
+
+// Global error handler for body-parser and general errors
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (err.type === 'entity.too.large' || err.status === 413) {
+    res.status(413).json({
+      success: false,
+      message: 'The uploaded backup file exceeds the maximum allowed size (50MB).',
+    });
+    return;
+  }
+  if (err.status === 400 && 'body' in err) {
+    res.status(400).json({
+      success: false,
+      message: 'Malformed JSON payload. Please ensure the backup file contains valid JSON.',
+    });
+    return;
+  }
+  next(err);
 });
 
 export default app;

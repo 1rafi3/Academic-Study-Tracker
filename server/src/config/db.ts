@@ -56,9 +56,13 @@ export const connectDB = async (): Promise<void> => {
   });
 };
 
-export const getDBStatus = () => ({
-  status: connectionStatus,
-  error: connectionError,
-  host: mongoose.connection.host || null,
-  database: mongoose.connection.name || null,
-});
+export const getDBStatus = () => {
+  const isProd = process.env.NODE_ENV === 'production';
+  return {
+    status: connectionStatus,
+    error: isProd ? (connectionError ? 'Database connection error' : null) : connectionError,
+    // Conceal internal database topology in production for privacy & security
+    host: isProd ? null : mongoose.connection.host || null,
+    database: isProd ? null : mongoose.connection.name || null,
+  };
+};
