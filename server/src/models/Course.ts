@@ -63,9 +63,10 @@ const courseSchema = new Schema<ICourseDocument>(
     },
     courseCode: {
       type: String,
-      required: [true, 'Course code is required (e.g., CSE 221)'],
+      required: false,
       trim: true,
       uppercase: true,
+      default: '',
     },
     courseName: {
       type: String,
@@ -74,7 +75,7 @@ const courseSchema = new Schema<ICourseDocument>(
     },
     credit: {
       type: Number,
-      required: [true, 'Credit value is required'],
+      required: false,
       min: [0, 'Credit cannot be negative'],
       max: [30, 'Credit cannot exceed 30'],
       default: 3.0,

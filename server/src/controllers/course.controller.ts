@@ -5,14 +5,33 @@ import { Semester } from '../models/Semester.js';
 import { ClassInstance } from '../models/ClassInstance.js';
 import { buildUserFilter } from '../utils/queryHelper.js';
 
+function generateCourseCode(name: string): string {
+  if (!name) return 'COURSE';
+  const clean = String(name).replace(/\([^)]*\)/g, '').trim();
+  const tokens = clean.split(/[\s/-]+/).filter(Boolean);
+  const stopWords = new Set(['of', 'in', 'to', 'for', 'the', 'a', 'an', 'on', 'with', 'by']);
+  let abbr = '';
+  for (const token of tokens) {
+    const lower = token.toLowerCase();
+    if (lower === 'and' || token === '&') {
+      abbr += '&';
+      continue;
+    }
+    if (stopWords.has(lower) && tokens.length > 2) continue;
+    const ch = token.charAt(0).toUpperCase();
+    if (/[A-Z0-9]/.test(ch)) abbr += ch;
+  }
+  return abbr || clean.slice(0, 4).toUpperCase();
+}
+
 export const createCourse = async (req: Request, res: Response): Promise<void> => {
   try {
     const { courseCode, courseName, credit, instructor, description, color, semesterId, schedules, isArchived } = req.body;
 
-    if (!courseCode || !courseName || !semesterId) {
+    if (!courseName || !semesterId) {
       res.status(400).json({
         success: false,
-        message: 'Course code, course name, and semester ID are required.',
+        message: 'Course name and semester ID are required.',
       });
       return;
     }
@@ -35,11 +54,15 @@ export const createCourse = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
+    const finalCode = courseCode && String(courseCode).trim()
+      ? String(courseCode).trim().toUpperCase()
+      : generateCourseCode(String(courseName));
+
     const course = await Course.create({
       userId: req.userId,
-      courseCode: String(courseCode).trim().toUpperCase(),
+      courseCode: finalCode,
       courseName: String(courseName).trim(),
-      credit: credit !== undefined ? Number(credit) : 3.0,
+      credit: credit !== undefined && credit !== '' && !isNaN(Number(credit)) ? Number(credit) : 3.0,
       instructor: instructor ? String(instructor).trim() : '',
       description: description ? String(description).trim() : '',
       color: color || '#6366f1',
@@ -182,9 +205,12 @@ export const updateCourse = async (req: Request, res: Response): Promise<void> =
     }
 
     const updateData: Record<string, unknown> = {};
-    if (courseCode !== undefined) updateData.courseCode = String(courseCode).trim().toUpperCase();
+    if (courseCode !== undefined) {
+      const trimmed = String(courseCode).trim();
+      updateData.courseCode = trimmed ? trimmed.toUpperCase() : generateCourseCode(String(courseName || 'COURSE'));
+    }
     if (courseName !== undefined) updateData.courseName = String(courseName).trim();
-    if (credit !== undefined) updateData.credit = Number(credit);
+    if (credit !== undefined && credit !== '' && !isNaN(Number(credit))) updateData.credit = Number(credit);
     if (instructor !== undefined) updateData.instructor = String(instructor).trim();
     if (description !== undefined) updateData.description = String(description).trim();
     if (color !== undefined) updateData.color = color;

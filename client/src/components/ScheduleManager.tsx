@@ -4,6 +4,7 @@ import { scheduleApi, courseApi } from '../api/academicApi.js';
 import type { ISchedule, DayOfWeek, ICourse } from '../types/academic.js';
 import { DAYS_OF_WEEK } from '../types/academic.js';
 import { Clock, Plus, Trash2, Edit2, AlertCircle, X, MapPin, Tag } from 'lucide-react';
+import { useToast } from '../context/ToastContext.js';
 
 interface Props {
   selectedCourseId: string | null;
@@ -11,6 +12,7 @@ interface Props {
 
 export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<ISchedule | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -78,8 +80,9 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedules', selectedCourseId] });
       queryClient.invalidateQueries({ queryKey: ['courses'] });
+      showToast('Weekly class schedule slot removed.', 'info');
     },
-    onError: (err: Error) => alert(`Error deleting schedule: ${err.message}`),
+    onError: (err: Error) => showToast(`Error deleting schedule: ${err.message}`, 'error'),
   });
 
   const openCreateModal = () => {

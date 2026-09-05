@@ -3,7 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuth } from './context/AuthContext.js';
 import { AuthScreen } from './components/auth/AuthScreen.js';
 import { LoadingScreen } from './components/auth/LoadingScreen.js';
-import { UserProfileMenu } from './components/auth/UserProfileMenu.js';
+import { Navbar } from './components/Navbar.js';
+import type { TabType } from './components/Navbar.js';
 import { useKeepAlive } from './hooks/useKeepAlive.js';
 import { CalendarDashboard } from './components/CalendarDashboard.js';
 import { CourseNotesTimeline } from './components/CourseNotesTimeline.js';
@@ -14,17 +15,7 @@ import { SemesterManager } from './components/SemesterManager.js';
 import { CourseManager } from './components/CourseManager.js';
 import { ScheduleManager } from './components/ScheduleManager.js';
 import { ClassInstanceManager } from './components/ClassInstanceManager.js';
-import { 
-  Database, 
-  Layers, 
-  GraduationCap,
-  BookOpen,
-  CalendarCheck,
-  Calendar as CalendarIcon,
-  FileText,
-  Target,
-  Clock
-} from 'lucide-react';
+import { GpaCalculator } from './components/GpaCalculator.js';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,7 +27,7 @@ const queryClient = new QueryClient({
 });
 
 function MainDashboard() {
-  const [activeTab, setActiveTab] = useState<'calendar' | 'notes' | 'routine' | 'analytics' | 'backup' | 'classes' | 'academic'>('calendar');
+  const [activeTab, setActiveTab] = useState<TabType>('calendar');
   const [selectedSemesterId, setSelectedSemesterId] = useState<string | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
@@ -46,125 +37,17 @@ function MainDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center p-4 md:p-8 selection:bg-indigo-500/30 selection:text-indigo-200 print:p-0 print:m-0 print:bg-white print:min-h-0">
-      {/* Background glow accents */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 print:hidden">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 right-1/4 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl" />
+    <div className="min-h-screen flex flex-col items-center p-3 sm:p-6 md:p-8 selection:bg-indigo-500/30 selection:text-indigo-200 print:p-0 print:m-0 print:bg-white print:min-h-0 transition-colors duration-200">
+      {/* Dynamic atmospheric background glow accents */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 print:hidden opacity-75">
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[32rem] h-[32rem] bg-indigo-600/15 dark:bg-indigo-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '8s' }} />
+        <div className="absolute -bottom-40 right-1/4 w-96 h-96 bg-violet-600/10 dark:bg-violet-600/15 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 left-10 w-72 h-72 bg-blue-600/10 dark:bg-blue-600/10 rounded-full blur-3xl" />
       </div>
 
       <div className="w-full max-w-5xl relative z-10 space-y-6 print:max-w-full print:space-y-0 print:m-0 print:p-0">
-        {/* Top Navbar (Hidden on print) */}
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4 print:hidden">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-indigo-950/80 border border-indigo-700/60 text-indigo-400">
-              <GraduationCap className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold tracking-tight text-slate-100">
-                  Academic Study Tracker
-                </h1>
-              </div>
-              <p className="text-xs text-slate-400">
-                Calendar &bull; Study Notes &bull; Weekly Routine &bull; Attendance Analytics &bull; Course Setup
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Tab Navigation */}
-            <div className="flex flex-wrap items-center p-1 rounded-xl bg-slate-900 border border-slate-800 gap-0.5">
-              <button
-                id="tab-calendar-btn"
-                onClick={() => setActiveTab('calendar')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                  activeTab === 'calendar'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <CalendarIcon className="w-3.5 h-3.5" />
-                Calendar
-              </button>
-              <button
-                id="tab-notes-btn"
-                onClick={() => setActiveTab('notes')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                  activeTab === 'notes'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <FileText className="w-3.5 h-3.5" />
-                Study Notes
-              </button>
-              <button
-                id="tab-routine-btn"
-                onClick={() => setActiveTab('routine')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                  activeTab === 'routine'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Clock className="w-3.5 h-3.5" />
-                Weekly Routine
-              </button>
-              <button
-                id="tab-analytics-btn"
-                onClick={() => setActiveTab('analytics')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                  activeTab === 'analytics'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Target className="w-3.5 h-3.5" />
-                Analytics
-              </button>
-              <button
-                id="tab-backup-btn"
-                onClick={() => setActiveTab('backup')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                  activeTab === 'backup'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Database className="w-3.5 h-3.5" />
-                Backup & Data
-              </button>
-              <button
-                id="tab-classes-btn"
-                onClick={() => setActiveTab('classes')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                  activeTab === 'classes'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <CalendarCheck className="w-3.5 h-3.5" />
-                Classes
-              </button>
-              <button
-                id="tab-academic-btn"
-                onClick={() => setActiveTab('academic')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                  activeTab === 'academic'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <BookOpen className="w-3.5 h-3.5" />
-                Academic Setup
-              </button>
-            </div>
-
-            {/* Authenticated User Profile Dropdown */}
-            <UserProfileMenu />
-          </div>
-        </header>
+        {/* Top Navbar with tabs & theme toggle */}
+        <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {/* Tab 1: Main Academic Calendar & Dashboard */}
         {activeTab === 'calendar' && (
@@ -209,6 +92,18 @@ function MainDashboard() {
               onSelectSemester={handleSelectSemester}
               onNavigateToCalendar={() => setActiveTab('calendar')}
               onNavigateToNotes={() => setActiveTab('notes')}
+              onNavigateToGpa={() => setActiveTab('gpa')}
+            />
+          </main>
+        )}
+
+        {/* Tab: GPA & CGPA Calculator */}
+        {activeTab === 'gpa' && (
+          <main className="space-y-6">
+            <GpaCalculator
+              selectedSemesterId={selectedSemesterId}
+              onSelectSemester={handleSelectSemester}
+              onNavigateToSetup={() => setActiveTab('academic')}
             />
           </main>
         )}
@@ -236,25 +131,8 @@ function MainDashboard() {
         {/* Tab 4: Academic Setup (Semesters, Courses, Schedules) */}
         {activeTab === 'academic' && (
           <main className="space-y-6">
-            {/* Hierarchy Guide */}
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-900/60 border border-slate-800/60 text-xs text-slate-300">
-              <Layers className="w-4 h-4 text-indigo-400 shrink-0" />
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-semibold text-slate-200">Hierarchy:</span>
-                <span className="px-2 py-0.5 rounded bg-slate-800 text-indigo-300 font-medium">1. Semester</span>
-                <span className="text-slate-500">&rarr;</span>
-                <span className="px-2 py-0.5 rounded bg-slate-800 text-indigo-300 font-medium">2. Course</span>
-                <span className="text-slate-500">&rarr;</span>
-                <span className="px-2 py-0.5 rounded bg-slate-800 text-indigo-300 font-medium">3. Weekly Schedule</span>
-                <span className="text-slate-500">&rarr;</span>
-                <span className="px-2 py-0.5 rounded bg-slate-800 text-indigo-300 font-medium">4. Class Occurrences</span>
-                <span className="text-slate-500">&rarr;</span>
-                <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-medium border border-emerald-800/50">5. Study Notes & Timeline (Phase 5 Active)</span>
-              </div>
-            </div>
-
             {/* Section 1: Semesters */}
-            <section className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-sm">
+            <section className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
               <SemesterManager
                 selectedSemesterId={selectedSemesterId}
                 onSelectSemester={handleSelectSemester}
@@ -262,7 +140,7 @@ function MainDashboard() {
             </section>
 
             {/* Section 2: Courses */}
-            <section className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-sm">
+            <section className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
               <CourseManager
                 selectedSemesterId={selectedSemesterId}
                 selectedCourseId={selectedCourseId}
@@ -271,7 +149,7 @@ function MainDashboard() {
             </section>
 
             {/* Section 3: Schedules */}
-            <section className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-sm">
+            <section className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
               <ScheduleManager selectedCourseId={selectedCourseId} />
             </section>
           </main>

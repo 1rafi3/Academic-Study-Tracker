@@ -25,6 +25,7 @@ import {
   Loader2,
   X,
 } from 'lucide-react';
+import { useToast } from '../context/ToastContext.js';
 
 interface Props {
   selectedSemesterId: string | null;
@@ -36,6 +37,7 @@ export const BackupData: React.FC<Props> = ({
   onSelectSemester,
 }) => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   // Modals state
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -93,8 +95,9 @@ export const BackupData: React.FC<Props> = ({
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
+      showToast('JSON Backup downloaded successfully!', 'success');
     } catch (err: unknown) {
-      alert(`Export failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      showToast(`Export failed: ${err instanceof Error ? err.message : 'Unknown error'}`, 'error');
     } finally {
       setIsExportingJson(false);
     }
@@ -113,6 +116,7 @@ export const BackupData: React.FC<Props> = ({
         parsed = JSON.parse(text);
       } catch (jsonErr: unknown) {
         setFileError('Invalid JSON format: The selected file is not a valid JSON document.');
+        showToast('Invalid JSON format in selected file.', 'error');
         return;
       }
 
@@ -120,12 +124,11 @@ export const BackupData: React.FC<Props> = ({
       setBackupPayload(parsed);
       setValidationResult(validation);
       setIsImportModalOpen(true);
+      showToast('Backup file validated. Review items to import.', 'info');
     } catch (err: unknown) {
-      setFileError(
-        `Failed to process backup file: ${
-          err instanceof Error ? err.message : 'Server error occurred'
-        }`
-      );
+      const msg = `Failed to process backup file: ${err instanceof Error ? err.message : 'Server error occurred'}`;
+      setFileError(msg);
+      showToast(msg, 'error');
     } finally {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -145,8 +148,9 @@ export const BackupData: React.FC<Props> = ({
       a.click();
       a.remove();
       window.URL.revokeObjectURL(downloadUrl);
+      showToast(`Report downloaded: ${filename}`, 'success');
     } catch (err: unknown) {
-      alert(`CSV download failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      showToast(`CSV download failed: ${err instanceof Error ? err.message : 'Unknown error'}`, 'error');
     }
   };
 

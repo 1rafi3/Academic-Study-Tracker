@@ -1,4 +1,5 @@
 import type { DayOfWeek, ICourse } from '../types/academic.js';
+import { getCourseShortName } from './courseUtils.js';
 
 export const DAYS_OF_WEEK_ORDERED: DayOfWeek[] = [
   'Sunday',
@@ -115,7 +116,7 @@ export const extractRoutineItemsFromCourses = (courses: ICourse[]): RoutineBlock
     for (const sched of course.schedules || []) {
       items.push({
         courseId: course._id,
-        courseCode: course.courseCode,
+        courseCode: getCourseShortName(course),
         courseName: course.courseName,
         color: course.color || '#6366f1',
         instructor: course.instructor || '',

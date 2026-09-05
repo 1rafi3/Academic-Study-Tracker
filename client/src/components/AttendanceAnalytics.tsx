@@ -24,13 +24,16 @@ import {
   TrendingDown,
   Info,
   Calendar,
+  Calculator,
 } from 'lucide-react';
+import { getCourseShortName } from '../utils/courseUtils.js';
 
 interface Props {
   selectedSemesterId: string | null;
   onSelectSemester: (id: string | null) => void;
   onNavigateToCalendar: (dateString?: string) => void;
   onNavigateToNotes: () => void;
+  onNavigateToGpa?: () => void;
 }
 
 const PRESET_TARGETS = [65, 70, 75, 80, 85, 90];
@@ -39,6 +42,7 @@ export const AttendanceAnalytics: React.FC<Props> = ({
   selectedSemesterId,
   onSelectSemester,
   onNavigateToCalendar,
+  onNavigateToGpa,
 }) => {
   // State
   const [targetPercentage, setTargetPercentage] = useState<number>(75);
@@ -175,11 +179,23 @@ export const AttendanceAnalytics: React.FC<Props> = ({
                 <option value="all">All Courses</option>
                 {courses.map((c) => (
                   <option key={c._id} value={c._id}>
-                    {c.courseCode} &ndash; {c.courseName}
+                    {getCourseShortName(c)} &ndash; {c.courseName}
                   </option>
                 ))}
               </select>
             </div>
+
+            {/* Link to GPA Calculator */}
+            {onNavigateToGpa && (
+              <button
+                type="button"
+                onClick={onNavigateToGpa}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 text-xs font-semibold transition cursor-pointer"
+              >
+                <Calculator className="w-3.5 h-3.5" />
+                GPA Calculator &rarr;
+              </button>
+            )}
           </div>
         </div>
 

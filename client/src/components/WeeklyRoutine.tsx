@@ -18,6 +18,7 @@ import {
   CalendarCheck,
   Palette,
 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext.js';
 
 interface Props {
   selectedSemesterId: string | null;
@@ -31,6 +32,7 @@ export const WeeklyRoutine: React.FC<Props> = ({
   onNavigateToSetup,
 }) => {
   // Customization State
+  const { actualTheme } = useTheme();
   const [is12Hour, setIs12Hour] = useState<boolean>(true);
   const [colorTheme, setColorTheme] = useState<'vibrant' | 'parchment' | 'minimal'>('vibrant');
   const [showRoom, setShowRoom] = useState<boolean>(true);
@@ -364,7 +366,7 @@ export const WeeklyRoutine: React.FC<Props> = ({
                                 const courseColor = cls.color || '#6366f1';
 
                                 // Vibrant Course Colors styling
-                                const vibrantBg = `${courseColor}18`;
+                                const vibrantBg = actualTheme === 'light' ? `${courseColor}22` : `${courseColor}18`;
                                 const vibrantBorder = courseColor;
 
                                 // Parchment styling
@@ -372,8 +374,8 @@ export const WeeklyRoutine: React.FC<Props> = ({
                                 const parchmentBorder = '#3b3225';
 
                                 // Minimal styling
-                                const minimalBg = '#1e293b';
-                                const minimalBorder = '#475569';
+                                const minimalBg = actualTheme === 'light' ? '#f1f5f9' : '#1e293b';
+                                const minimalBorder = actualTheme === 'light' ? '#cbd5e1' : '#475569';
 
                                 const currentBg =
                                   colorTheme === 'parchment'
@@ -392,6 +394,10 @@ export const WeeklyRoutine: React.FC<Props> = ({
                                 const textColor =
                                   colorTheme === 'parchment'
                                     ? '#1c1813'
+                                    : colorTheme === 'minimal'
+                                    ? (actualTheme === 'light' ? '#0f172a' : '#f8fafc')
+                                    : actualTheme === 'light'
+                                    ? '#0f172a'
                                     : '#f8fafc';
 
                                 return (

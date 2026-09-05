@@ -16,6 +16,8 @@ import {
   AlertTriangle,
   Calendar,
 } from 'lucide-react';
+import { useToast } from '../context/ToastContext.js';
+import { generateCourseAbbreviation, getCourseShortName } from '../utils/courseUtils.js';
 
 interface Props {
   selectedSemesterId: string | null;
@@ -40,6 +42,7 @@ export const CourseManager: React.FC<Props> = ({
   onSelectCourse,
 }) => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [showArchived, setShowArchived] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingCourse, setEditingCourse] = useState<ICourse | null>(null);
@@ -90,12 +93,14 @@ export const CourseManager: React.FC<Props> = ({
     mutationFn: (data: Partial<ICourse>) => courseApi.create(data),
     onSuccess: (newCourse) => {
       queryClient.invalidateQueries({ queryKey: ['courses'] });
-      queryClient.invalidateQueries({ queryKey: ['class-instances'] });
-      queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
       setIsModalOpen(false);
       onSelectCourse(newCourse._id);
+      showToast(`Course "${newCourse.courseCode}" created successfully!`, 'success');
     },
-    onError: (err: Error) => setFormError(err.message),
+    onError: (err: Error) => {
+      setFormError(err.message);
+      showToast(err.message, 'error');
+    },
   });
 
   const updateMutation = useMutation({
@@ -106,8 +111,12 @@ export const CourseManager: React.FC<Props> = ({
       queryClient.invalidateQueries({ queryKey: ['class-instances'] });
       queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
       setIsModalOpen(false);
+      showToast('Course updated successfully!', 'success');
     },
-    onError: (err: Error) => setFormError(err.message),
+    onError: (err: Error) => {
+      setFormError(err.message);
+      showToast(err.message, 'error');
+    },
   });
 
   const deleteMutation = useMutation({
@@ -121,18 +130,21 @@ export const CourseManager: React.FC<Props> = ({
         onSelectCourse(null);
       }
       if (result.archived) {
-        alert('Course has historical class occurrences. It was safely archived to preserve attendance history.');
+        showToast('Course has historical class occurrences and was safely archived.', 'info');
+      } else {
+        showToast('Course deleted successfully.', 'success');
       }
     },
-    onError: (err: Error) => alert(`Error removing course: ${err.message}`),
+    onError: (err: Error) => showToast(`Error removing course: ${err.message}`, 'error'),
   });
 
   const restoreMutation = useMutation({
     mutationFn: (id: string) => courseApi.update(id, { isArchived: false }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['courses'] });
+      showToast('Course restored successfully!', 'success');
     },
-    onError: (err: Error) => alert(`Error restoring: ${err.message}`),
+    onError: (err: Error) => showToast(`Error restoring: ${err.message}`, 'error'),
   });
 
   const openCreateModal = () => {
@@ -201,14 +213,17 @@ export const CourseManager: React.FC<Props> = ({
       setFormError('Please select a semester first.');
       return;
     }
-    if (!courseCode.trim()) {
-      setFormError('Course code is required (e.g. CSE 221)');
-      return;
-    }
     if (!courseName.trim()) {
       setFormError('Course name is required (e.g. Object Oriented Programming)');
       return;
     }
+
+    // Auto-generate courseCode from courseName if left blank by student
+    const finalCode = courseCode.trim() 
+      ? courseCode.trim().toUpperCase() 
+      : generateCourseAbbreviation(courseName.trim());
+
+    const finalCredit = isNaN(Number(credit)) || Number(credit) < 0 ? 3.0 : Number(credit);
 
     // Validate schedules if any
     for (let i = 0; i < schedules.length; i++) {
@@ -224,9 +239,9 @@ export const CourseManager: React.FC<Props> = ({
     }
 
     const payload: Partial<ICourse> = {
-      courseCode: courseCode.trim().toUpperCase(),
+      courseCode: finalCode,
       courseName: courseName.trim(),
-      credit: Number(credit),
+      credit: finalCredit,
       instructor: instructor.trim(),
       description: description.trim(),
       color,
@@ -341,7 +356,7 @@ export const CourseManager: React.FC<Props> = ({
                       className="w-2.5 h-2.5 rounded-full shrink-0"
                       style={{ backgroundColor: course.color || '#6366f1' }}
                     />
-                    <span className="font-bold text-slate-100 text-sm">{course.courseCode}</span>
+                    <span className="font-bold text-slate-100 text-sm">{getCourseShortName(course)}</span>
                     <span className="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-medium">
                       {course.credit} Cr
                     </span>
@@ -456,22 +471,41 @@ export const CourseManager: React.FC<Props> = ({
                 </div>
               )}
 
+              {/* Course Name */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-300 dark:text-slate-300">Course Name *</label>
+                <input
+                  type="text"
+                  value={courseName}
+                  onChange={(e) => setCourseName(e.target.value)}
+                  placeholder="e.g. Object Oriented Programming, Differentiation Equation and laplace Transform"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500 transition"
+                  required
+                />
+              </div>
+
               {/* Course Code & Credits */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-2 space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-300">Course Code *</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-300">Course Code <span className="text-[10px] text-slate-500 font-normal">(Optional)</span></label>
+                    {courseName.trim() && !courseCode.trim() && (
+                      <span className="text-[10px] text-indigo-400 font-medium">
+                        Auto-abbr: {generateCourseAbbreviation(courseName)}
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={courseCode}
                     onChange={(e) => setCourseCode(e.target.value.toUpperCase())}
-                    placeholder="e.g. CSE 221, MATH 101"
+                    placeholder={courseName.trim() ? `Auto: ${generateCourseAbbreviation(courseName)}` : 'e.g. CSE 221, OOP'}
                     className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500 uppercase font-mono transition"
-                    required
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-300">Credits *</label>
+                  <label className="text-xs font-semibold text-slate-300">Credits <span className="text-[10px] text-slate-500 font-normal">(Default 3.0)</span></label>
                   <input
                     type="number"
                     step="0.5"
@@ -479,23 +513,10 @@ export const CourseManager: React.FC<Props> = ({
                     max="30"
                     value={credit}
                     onChange={(e) => setCredit(Number(e.target.value))}
+                    placeholder="3.0"
                     className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500 transition"
-                    required
                   />
                 </div>
-              </div>
-
-              {/* Course Name */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">Course Name *</label>
-                <input
-                  type="text"
-                  value={courseName}
-                  onChange={(e) => setCourseName(e.target.value)}
-                  placeholder="e.g. Object Oriented Programming, Database Systems"
-                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500 transition"
-                  required
-                />
               </div>
 
               {/* Instructor */}

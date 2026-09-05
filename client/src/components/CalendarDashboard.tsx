@@ -17,6 +17,7 @@ import type {
   AttendanceStatus,
   ClassStatus,
 } from '../types/academic.js';
+import { getCourseShortName } from '../utils/courseUtils.js';
 import { ClassNotesModal } from './ClassNotesModal.js';
 import { AcademicEventModal } from './AcademicEventModal.js';
 import {
@@ -231,19 +232,93 @@ export const CalendarDashboard: React.FC<Props> = ({
     enabled: Boolean(activeSemester?._id),
   });
 
-  // Fetch upcoming 5 classes
-  const { data: upcomingClasses = [] } = useQuery<IClassInstance[]>({
-    queryKey: ['class-instances', 'upcoming', activeSemester?._id],
+  // 14-day window for Upcoming Events
+  const twoWeeksLaterString = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 14);
+    return toDateString(d.getFullYear(), d.getMonth(), d.getDate());
+  }, []);
+
+  // Fetch upcoming Academic Events (Class Tests, Quizzes, Assignments, Exams)
+  const { data: upcomingAcademicEvents = [] } = useQuery<IAcademicEvent[]>({
+    queryKey: ['academic-events', 'upcoming', activeSemester?._id, todayString, twoWeeksLaterString],
     queryFn: () => {
       if (!activeSemester?._id) return Promise.resolve([]);
-      return classInstanceApi.getAll({
+      return academicEventApi.getAll({
         semesterId: activeSemester._id,
         startDate: todayString,
-        limit: 5,
+        endDate: twoWeeksLaterString,
       });
     },
     enabled: Boolean(activeSemester?._id),
   });
+
+  // Fetch full year Bangladesh public holidays to support the upcoming window
+  const currentYear = todayDate.getFullYear();
+  const { data: allYearHolidays = [] } = useQuery<IBangladeshHoliday[]>({
+    queryKey: ['holidays', 'all-year', currentYear],
+    queryFn: () => holidayApi.getHolidays(currentYear),
+  });
+
+  // Unified list of upcoming events and holidays sorted chronologically
+  const upcomingItems = useMemo(() => {
+    interface UpcomingItem {
+      id: string;
+      type: 'event' | 'holiday';
+      title: string;
+      subType: string;
+      dateString: string;
+      courseCode?: string;
+      courseColor?: string;
+      time?: string;
+      room?: string;
+      description?: string;
+    }
+
+    const items: UpcomingItem[] = [];
+
+    // 1. Add Academic Events (CT, Quiz, Assignment, Exam, etc.)
+    for (const ev of upcomingAcademicEvents) {
+      const course = typeof ev.courseId === 'object' && ev.courseId ? ev.courseId : null;
+      items.push({
+        id: `ev-${ev._id}`,
+        type: 'event',
+        title: ev.title,
+        subType: ev.eventType,
+        dateString: ev.dateString,
+        courseCode: course ? getCourseShortName(course) : undefined,
+        courseColor: course?.color || '#8b5cf6',
+        time: ev.startTime ? (ev.endTime ? `${ev.startTime} – ${ev.endTime}` : ev.startTime) : undefined,
+        room: ev.room,
+        description: ev.description,
+      });
+    }
+
+    // 2. Add Bangladesh Public Holidays in range
+    for (const h of allYearHolidays) {
+      if (h.dateString >= todayString && h.dateString <= twoWeeksLaterString) {
+        items.push({
+          id: `hol-${h.dateString}-${h.name}`,
+          type: 'holiday',
+          title: h.name,
+          subType: 'Public Holiday',
+          dateString: h.dateString,
+          description: h.nameBangla || undefined,
+        });
+      }
+    }
+
+    // Sort chronologically ascending
+    return items.sort((a, b) => {
+      if (a.dateString !== b.dateString) {
+        return a.dateString.localeCompare(b.dateString);
+      }
+      if (a.type !== b.type) {
+        return a.type === 'holiday' ? -1 : 1;
+      }
+      return (a.time || '').localeCompare(b.time || '');
+    });
+  }, [upcomingAcademicEvents, allYearHolidays, todayString, twoWeeksLaterString]);
 
   // Map dates to classes for fast lookup
   const dateClassesMap = useMemo(() => {
@@ -596,7 +671,7 @@ export const CalendarDashboard: React.FC<Props> = ({
                 <option value="all">All Courses</option>
                 {courses.map((c) => (
                   <option key={c._id} value={c._id}>
-                    {c.courseCode} &ndash; {c.courseName}
+                    {getCourseShortName(c)} &ndash; {c.courseName}
                   </option>
                 ))}
               </select>
@@ -801,7 +876,7 @@ export const CalendarDashboard: React.FC<Props> = ({
                                   ? { backgroundColor: course.color }
                                   : undefined
                               }
-                              title={`${course?.courseCode || 'Class'}: ${
+                              title={`${course ? getCourseShortName(course) : 'Class'}: ${
                                 isCancelled ? 'Cancelled' : isHolidayClass ? 'Holiday' : cls.attendanceStatus
                               }`}
                             />
@@ -948,7 +1023,7 @@ export const CalendarDashboard: React.FC<Props> = ({
                                   isCancelled ? 'line-through text-slate-400' : 'text-slate-100'
                                 }`}
                               >
-                                {course?.courseCode || 'CLASS'}
+                                {course ? getCourseShortName(course) : 'CLASS'}
                               </span>
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400 font-medium">
                                 {cls.type}
@@ -1181,7 +1256,7 @@ export const CalendarDashboard: React.FC<Props> = ({
                             </span>
                             {evCourse ? (
                               <span className="font-mono font-bold text-xs text-slate-200">
-                                {evCourse.courseCode}
+                                {getCourseShortName(evCourse)}
                               </span>
                             ) : (
                               <span className="text-[11px] text-slate-400 italic">General</span>
@@ -1242,75 +1317,112 @@ export const CalendarDashboard: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* 2. Upcoming Classes Widget */}
+          {/* 2. Next Upcoming Events Widget (Holidays, CTs, Quizzes, Assignments, Exams) */}
           <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md shadow-lg space-y-3">
-            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
-              <span>Next Upcoming Classes</span>
-              <span className="text-[10px] text-slate-500 font-normal">From Today Onwards</span>
-            </h3>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-violet-400" />
+                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  Next Upcoming Events
+                </h3>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-950 border border-slate-800 text-slate-400 font-mono">
+                Next 14 Days
+              </span>
+            </div>
 
-            {upcomingClasses.length === 0 ? (
-              <p className="text-xs text-slate-500 italic">No upcoming classes scheduled.</p>
+            {upcomingItems.length === 0 ? (
+              <div className="p-4 rounded-xl bg-slate-950/40 border border-dashed border-slate-800/80 text-center space-y-2">
+                <p className="text-xs text-slate-400">No upcoming events or holidays in the next 14 days.</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingEvent(null);
+                    setIsEventModalOpen(true);
+                  }}
+                  className="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 transition cursor-pointer"
+                >
+                  + Add Class Test, Quiz or Exam
+                </button>
+              </div>
             ) : (
-              <div className="space-y-2">
-                {upcomingClasses.map((cls) => {
-                  const course = typeof cls.courseId === 'object' ? cls.courseId : null;
-                  const isTarget = cls.dateString === selectedDate;
+              <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+                {upcomingItems.map((item) => {
+                  const isSelected = item.dateString === selectedDate;
+                  const isHoliday = item.type === 'holiday';
+
+                  // Badge color theme based on event subType
+                  let badgeClasses = 'bg-violet-950/80 border-violet-800 text-violet-300';
+                  if (isHoliday) {
+                    badgeClasses = 'bg-amber-950/80 border-amber-800 text-amber-300';
+                  } else if (item.subType === 'Class Test' || item.subType === 'Quiz') {
+                    badgeClasses = 'bg-purple-950/80 border-purple-700 text-purple-300';
+                  } else if (item.subType === 'Final Exam') {
+                    badgeClasses = 'bg-rose-950/80 border-rose-800 text-rose-300';
+                  } else if (item.subType === 'Assignment' || item.subType === 'Project Submission') {
+                    badgeClasses = 'bg-blue-950/80 border-blue-800 text-blue-300';
+                  }
 
                   return (
                     <div
-                      key={cls._id}
+                      key={item.id}
                       onClick={() => {
-                        setSelectedDate(cls.dateString);
-                        const [y, m] = cls.dateString.split('-').map(Number);
+                        setSelectedDate(item.dateString);
+                        const [y, m] = item.dateString.split('-').map(Number);
                         setViewYear(y);
                         setViewMonth(m - 1);
                       }}
-                      className={`p-2.5 rounded-xl border transition flex items-center justify-between gap-3 cursor-pointer ${
-                        isTarget
-                          ? 'bg-indigo-950/60 border-indigo-500 text-slate-100'
+                      className={`p-3 rounded-xl border transition flex items-start justify-between gap-3 cursor-pointer group ${
+                        isSelected
+                          ? 'bg-indigo-950/60 border-indigo-500 shadow-sm text-slate-100'
                           : 'bg-slate-950 hover:bg-slate-900 border-slate-800/80 text-slate-300'
                       }`}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span
-                          className="w-2 h-2 rounded-full shrink-0"
-                          style={{ backgroundColor: course?.color || '#6366f1' }}
-                        />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-xs">{course?.courseCode}</span>
-                            <span className="text-[10px] text-slate-400 font-mono">
-                              {cls.dateString}
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider border ${badgeClasses}`}>
+                            {isHoliday ? '🇧🇩 Holiday' : item.subType}
+                          </span>
+                          {item.courseCode && (
+                            <span
+                              className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-slate-900 border border-slate-800 text-slate-200"
+                              style={item.courseColor ? { borderColor: `${item.courseColor}55`, color: item.courseColor } : undefined}
+                            >
+                              {item.courseCode}
                             </span>
-                          </div>
-                          <p className="text-[11px] text-slate-400 truncate">
-                            {cls.dayOfWeek} &bull; {cls.startTime} &ndash; {cls.endTime}
-                          </p>
+                          )}
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            {item.dateString}
+                          </span>
                         </div>
+                        <h4 className="text-xs font-semibold text-slate-200 group-hover:text-indigo-300 transition truncate">
+                          {item.title}
+                        </h4>
+                        {(item.time || item.room || item.description) && (
+                          <div className="flex flex-wrap items-center gap-2.5 text-[10px] text-slate-400 pt-0.5">
+                            {item.time && (
+                              <span className="flex items-center gap-1 font-mono">
+                                <Clock className="w-3 h-3 text-slate-500" />
+                                {item.time}
+                              </span>
+                            )}
+                            {item.room && (
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-3 h-3 text-slate-500" />
+                                {item.room}
+                              </span>
+                            )}
+                            {item.description && !item.time && !item.room && (
+                              <span className="truncate max-w-[200px] text-slate-500 italic">
+                                {item.description}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span
-                          className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
-                            cls.status === 'cancelled'
-                              ? 'bg-rose-950 text-rose-300 border border-rose-800'
-                              : cls.status === 'holiday'
-                              ? 'bg-amber-950 text-amber-300 border border-amber-800'
-                              : cls.attendanceStatus === 'attended'
-                              ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                              : cls.attendanceStatus === 'missed'
-                              ? 'bg-rose-950 text-rose-300 border border-rose-800'
-                              : 'bg-slate-900 text-slate-400'
-                          }`}
-                        >
-                          {cls.status === 'cancelled'
-                            ? 'Cancelled'
-                            : cls.status === 'holiday'
-                            ? 'Holiday'
-                            : cls.attendanceStatus}
-                        </span>
-                        <ArrowRight className="w-3.5 h-3.5 text-slate-500" />
+                      <div className="flex items-center self-center shrink-0">
+                        <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition" />
                       </div>
                     </div>
                   );

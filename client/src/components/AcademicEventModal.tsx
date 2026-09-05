@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { academicEventApi } from '../api/academicApi.js';
 import type { IAcademicEvent, AcademicEventType, ICourse } from '../types/academic.js';
 import { ACADEMIC_EVENT_TYPES } from '../types/academic.js';
+import { getCourseShortName } from '../utils/courseUtils.js';
 import {
   Calendar,
   Clock,
@@ -252,7 +253,7 @@ export const AcademicEventModal: React.FC<Props> = ({
                 <option value="">General (All Academic / University)</option>
                 {courses.map((c) => (
                   <option key={c._id} value={c._id}>
-                    {c.courseCode} &ndash; {c.courseName}
+                    {getCourseShortName(c)} &ndash; {c.courseName}
                   </option>
                 ))}
               </select>

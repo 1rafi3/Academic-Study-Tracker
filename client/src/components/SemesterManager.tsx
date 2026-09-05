@@ -15,6 +15,7 @@ import {
   X,
   AlertTriangle,
 } from 'lucide-react';
+import { useToast } from '../context/ToastContext.js';
 
 interface Props {
   selectedSemesterId: string | null;
@@ -26,6 +27,7 @@ export const SemesterManager: React.FC<Props> = ({
   onSelectSemester,
 }) => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [showArchived, setShowArchived] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSemester, setEditingSemester] = useState<ISemester | null>(null);
@@ -65,8 +67,12 @@ export const SemesterManager: React.FC<Props> = ({
       queryClient.invalidateQueries({ queryKey: ['semesters'] });
       setIsModalOpen(false);
       onSelectSemester(newSem._id);
+      showToast(`Semester "${newSem.name}" created successfully!`, 'success');
     },
-    onError: (err: Error) => setFormError(err.message),
+    onError: (err: Error) => {
+      setFormError(err.message);
+      showToast(err.message, 'error');
+    },
   });
 
   const updateMutation = useMutation({
@@ -75,8 +81,12 @@ export const SemesterManager: React.FC<Props> = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['semesters'] });
       setIsModalOpen(false);
+      showToast('Semester updated successfully!', 'success');
     },
-    onError: (err: Error) => setFormError(err.message),
+    onError: (err: Error) => {
+      setFormError(err.message);
+      showToast(err.message, 'error');
+    },
   });
 
   const deleteMutation = useMutation({
@@ -90,18 +100,21 @@ export const SemesterManager: React.FC<Props> = ({
         onSelectSemester(null);
       }
       if (result.archived) {
-        alert('Semester and its history have been safely archived.');
+        showToast('Semester and its history safely archived.', 'info');
+      } else {
+        showToast('Semester deleted successfully.', 'success');
       }
     },
-    onError: (err: Error) => alert(`Error: ${err.message}`),
+    onError: (err: Error) => showToast(`Error: ${err.message}`, 'error'),
   });
 
   const restoreMutation = useMutation({
     mutationFn: (id: string) => semesterApi.update(id, { isArchived: false }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['semesters'] });
+      showToast('Semester restored successfully!', 'success');
     },
-    onError: (err: Error) => alert(`Error restoring: ${err.message}`),
+    onError: (err: Error) => showToast(`Error restoring: ${err.message}`, 'error'),
   });
 
   const openCreateModal = () => {

@@ -9,6 +9,7 @@ import type {
   OverallAttendanceStats,
   ClassGenerationResult,
 } from '../types/academic.js';
+import { getCourseShortName } from '../utils/courseUtils.js';
 import {
   CalendarDays,
   Sparkles,
@@ -22,6 +23,7 @@ import {
   Filter,
   Check,
 } from 'lucide-react';
+import { useToast } from '../context/ToastContext.js';
 
 interface Props {
   selectedSemesterId: string | null;
@@ -33,6 +35,7 @@ export const ClassInstanceManager: React.FC<Props> = ({
   onSelectSemester,
 }) => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [selectedCourseFilter, setSelectedCourseFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [generationFeedback, setGenerationFeedback] = useState<string | null>(null);
@@ -82,13 +85,10 @@ export const ClassInstanceManager: React.FC<Props> = ({
     onSuccess: (result: ClassGenerationResult) => {
       queryClient.invalidateQueries({ queryKey: ['class-instances'] });
       queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
-      setGenerationFeedback(
-        `Generated ${result.created} new class occurrence(s). (${result.skipped} already existed).`
-      );
-      setTimeout(() => setGenerationFeedback(null), 6000);
+      showToast(`Generated ${result.created} new class occurrence(s).`, 'success');
     },
     onError: (err: Error) => {
-      alert(`Generation failed: ${err.message}`);
+      showToast(`Generation failed: ${err.message}`, 'error');
     },
   });
 
@@ -99,9 +99,10 @@ export const ClassInstanceManager: React.FC<Props> = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['class-instances'] });
       queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
+      showToast('Attendance status updated.', 'success', 2000);
     },
     onError: (err: Error) => {
-      alert(`Failed to update attendance: ${err.message}`);
+      showToast(`Failed to update attendance: ${err.message}`, 'error');
     },
   });
 
@@ -192,17 +193,17 @@ export const ClassInstanceManager: React.FC<Props> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             {/* Overall Percentage Card */}
-            <div className="p-4 rounded-xl bg-gradient-to-br from-indigo-950/50 to-slate-900 border border-indigo-900/60 flex flex-col justify-between">
-              <span className="text-xs font-medium text-indigo-300">Overall Attendance</span>
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-900/60 shadow-xs flex flex-col justify-between">
+              <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-300">Overall Attendance</span>
               <div className="my-2 flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold text-white">
+                <span className="text-3xl font-extrabold text-slate-900 dark:text-white">
                   {stats.percentage}%
                 </span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-500 dark:text-slate-400">
                   ({stats.attended}/{stats.decided} decided)
                 </span>
               </div>
-              <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
+              <div className="w-full bg-slate-100 dark:bg-slate-950 rounded-full h-1.5 overflow-hidden">
                 <div
                   className="bg-indigo-500 h-1.5 rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(100, stats.percentage)}%` }}
@@ -313,7 +314,7 @@ export const ClassInstanceManager: React.FC<Props> = ({
                 className="w-2 h-2 rounded-full"
                 style={{ backgroundColor: c.color || '#6366f1' }}
               />
-              {c.courseCode}
+              {getCourseShortName(c)}
             </button>
           ))}
         </div>
@@ -425,7 +426,7 @@ export const ClassInstanceManager: React.FC<Props> = ({
                         style={{ backgroundColor: course?.color || '#6366f1' }}
                       />
                       <span className="text-sm font-bold text-slate-100">
-                        {course?.courseCode || 'Course'}
+                        {course ? getCourseShortName(course) : 'Course'}
                       </span>
                       <span className="text-xs text-slate-300 truncate">
                         &bull; {course?.courseName || ''}
