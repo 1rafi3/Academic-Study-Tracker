@@ -489,20 +489,102 @@ export const CalendarDashboard: React.FC<Props> = ({
     return { total, scheduledTotal, attended, missed, unmarked, cancelled, holiday, rate };
   }, [monthClasses]);
 
-  // Mutations
+  // Mutations with Optimistic UI Updates for Instant (0ms) Responsiveness
   const attendanceMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: AttendanceStatus }) =>
       classInstanceApi.updateAttendance(id, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['class-instances'] });
+    onMutate: async ({ id, status }) => {
+      // Cancel outgoing refetches for class-instances so they don't overwrite the optimistic state
+      await queryClient.cancelQueries({ queryKey: ['class-instances'] });
+
+      // Snapshot the previous class instances cache across all queries
+      const previousQueries = queryClient.getQueriesData<IClassInstance[]>({
+        queryKey: ['class-instances'],
+      });
+
+      // Optimistically update all matching cache entries immediately (0ms visual delay)
+      queryClient.setQueriesData<IClassInstance[]>(
+        { queryKey: ['class-instances'] },
+        (old) => {
+          if (!old || !Array.isArray(old)) return old;
+          return old.map((item) =>
+            item._id === id ? { ...item, attendanceStatus: status } : item
+          );
+        }
+      );
+
+      return { previousQueries };
+    },
+    onSuccess: (updatedInstance) => {
+      // Direct cache update with the authoritative server-returned instance (avoids full GET refetch)
+      if (updatedInstance?._id) {
+        queryClient.setQueriesData<IClassInstance[]>(
+          { queryKey: ['class-instances'] },
+          (old) => {
+            if (!old || !Array.isArray(old)) return old;
+            return old.map((item) =>
+              item._id === updatedInstance._id ? { ...item, ...updatedInstance } : item
+            );
+          }
+        );
+      }
+      // Sync analytics queries in the background without blocking the UI
+      queryClient.invalidateQueries({ queryKey: ['attendance-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
+    },
+    onError: (_err, _variables, context) => {
+      // Roll back to previous snapshot if mutation fails
+      if (context?.previousQueries) {
+        for (const [key, data] of context.previousQueries) {
+          queryClient.setQueryData(key, data);
+        }
+      }
     },
   });
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status, cancellationReason }: { id: string; status: ClassStatus; cancellationReason?: string }) =>
       classInstanceApi.updateStatus(id, { status, cancellationReason }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['class-instances'] });
+    onMutate: async ({ id, status, cancellationReason }) => {
+      await queryClient.cancelQueries({ queryKey: ['class-instances'] });
+
+      const previousQueries = queryClient.getQueriesData<IClassInstance[]>({
+        queryKey: ['class-instances'],
+      });
+
+      queryClient.setQueriesData<IClassInstance[]>(
+        { queryKey: ['class-instances'] },
+        (old) => {
+          if (!old || !Array.isArray(old)) return old;
+          return old.map((item) =>
+            item._id === id ? { ...item, status, cancellationReason } : item
+          );
+        }
+      );
+
+      return { previousQueries };
+    },
+    onSuccess: (updatedInstance) => {
+      if (updatedInstance?._id) {
+        queryClient.setQueriesData<IClassInstance[]>(
+          { queryKey: ['class-instances'] },
+          (old) => {
+            if (!old || !Array.isArray(old)) return old;
+            return old.map((item) =>
+              item._id === updatedInstance._id ? { ...item, ...updatedInstance } : item
+            );
+          }
+        );
+      }
+      queryClient.invalidateQueries({ queryKey: ['attendance-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousQueries) {
+        for (const [key, data] of context.previousQueries) {
+          queryClient.setQueryData(key, data);
+        }
+      }
     },
   });
 
@@ -1129,7 +1211,6 @@ export const CalendarDashboard: React.FC<Props> = ({
                               onClick={() =>
                                 statusMutation.mutate({ id: cls._id, status: 'scheduled' })
                               }
-                              disabled={statusMutation.isPending}
                               className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-indigo-300 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 transition cursor-pointer"
                             >
                               <RotateCcw className="w-3 h-3" />
@@ -1145,7 +1226,6 @@ export const CalendarDashboard: React.FC<Props> = ({
                                   cancellationReason: 'Class cancelled by instructor',
                                 })
                               }
-                              disabled={statusMutation.isPending}
                               className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-rose-400 hover:text-rose-300 bg-slate-900 hover:bg-rose-950/30 border border-slate-800 transition cursor-pointer"
                             >
                               <XCircle className="w-3 h-3" />
@@ -1166,7 +1246,6 @@ export const CalendarDashboard: React.FC<Props> = ({
                               onClick={() =>
                                 attendanceMutation.mutate({ id: cls._id, status: 'attended' })
                               }
-                              disabled={attendanceMutation.isPending}
                               className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
                                 isAttended
                                   ? 'bg-emerald-600 text-white shadow-xs'
@@ -1182,7 +1261,6 @@ export const CalendarDashboard: React.FC<Props> = ({
                               onClick={() =>
                                 attendanceMutation.mutate({ id: cls._id, status: 'missed' })
                               }
-                              disabled={attendanceMutation.isPending}
                               className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
                                 isMissed
                                   ? 'bg-rose-600 text-white shadow-xs'
@@ -1198,7 +1276,6 @@ export const CalendarDashboard: React.FC<Props> = ({
                               onClick={() =>
                                 attendanceMutation.mutate({ id: cls._id, status: 'unmarked' })
                               }
-                              disabled={attendanceMutation.isPending}
                               className={`px-1.5 py-1 rounded-lg text-xs transition cursor-pointer ${
                                 isUnmarked
                                   ? 'bg-slate-800 text-slate-200'

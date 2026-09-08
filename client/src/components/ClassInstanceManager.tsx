@@ -92,16 +92,54 @@ export const ClassInstanceManager: React.FC<Props> = ({
     },
   });
 
-  // Mutation: Update Attendance Status
+  // Mutation: Update Attendance Status with Optimistic UI Updates
   const attendanceMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: AttendanceStatus }) =>
       classInstanceApi.updateAttendance(id, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['class-instances'] });
-      queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
-      showToast('Attendance status updated.', 'success', 2000);
+    onMutate: async ({ id, status }) => {
+      // Cancel outgoing refetches so they don't overwrite optimistic state
+      await queryClient.cancelQueries({ queryKey: ['class-instances'] });
+
+      // Snapshot the previous class instances cache
+      const previousQueries = queryClient.getQueriesData<IClassInstance[]>({
+        queryKey: ['class-instances'],
+      });
+
+      // Optimistically update all matching cache entries immediately (0ms visual delay)
+      queryClient.setQueriesData<IClassInstance[]>(
+        { queryKey: ['class-instances'] },
+        (old) => {
+          if (!old || !Array.isArray(old)) return old;
+          return old.map((item) =>
+            item._id === id ? { ...item, attendanceStatus: status } : item
+          );
+        }
+      );
+
+      return { previousQueries };
     },
-    onError: (err: Error) => {
+    onSuccess: (updatedInstance) => {
+      // Directly merge the server instance into the cache without requiring a full refetch
+      if (updatedInstance?._id) {
+        queryClient.setQueriesData<IClassInstance[]>(
+          { queryKey: ['class-instances'] },
+          (old) => {
+            if (!old || !Array.isArray(old)) return old;
+            return old.map((item) =>
+              item._id === updatedInstance._id ? { ...item, ...updatedInstance } : item
+            );
+          }
+        );
+      }
+      queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance-analytics'] });
+    },
+    onError: (err: Error, _variables, context) => {
+      if (context?.previousQueries) {
+        for (const [key, data] of context.previousQueries) {
+          queryClient.setQueryData(key, data);
+        }
+      }
       showToast(`Failed to update attendance: ${err.message}`, 'error');
     },
   });
