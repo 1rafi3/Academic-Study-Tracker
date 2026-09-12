@@ -156,8 +156,11 @@ function MainDashboard() {
         )}
 
         {/* Footer */}
-        <footer className="border-t border-slate-800/80 pt-4 text-center text-xs text-slate-500 print:hidden">
+        <footer className="border-t border-slate-200/90 dark:border-slate-800/80 pt-4 pb-2 text-center text-xs text-slate-500 dark:text-slate-400 print:hidden space-y-1">
           <p>Academic Study Tracker &bull; Your All-in-One University Companion</p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            Created by <span className="font-semibold text-slate-700 dark:text-slate-300">MD Sheik Rafiwol Karim Rafi</span>
+          </p>
         </footer>
       </div>
     </div>

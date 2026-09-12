@@ -105,6 +105,11 @@ export const UserProfileMenu: React.FC = () => {
               </>
             )}
           </button>
+
+          {/* Creator Credit */}
+          <div className="pt-2 pb-1 border-t border-slate-800/80 text-[10px] text-slate-500 text-center">
+            Created by <span className="text-slate-400 font-medium">MD Sheik Rafiwol Karim Rafi</span>
+          </div>
         </div>
       )}
     </div>

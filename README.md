@@ -42,3 +42,7 @@ cp .env.example .env    # Configure VITE_API_URL if needed
 npm run dev
 ```
 Frontend will start on `http://localhost:5173`.
+
+## Author
+
+**MD Sheik Rafiwol Karim Rafi**

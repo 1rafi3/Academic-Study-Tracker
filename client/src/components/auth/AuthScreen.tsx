@@ -48,8 +48,11 @@ export const AuthScreen: React.FC = () => {
       </div>
 
       {/* Footer copyright */}
-      <footer className="relative z-10 mt-8 text-center text-xs text-slate-500">
-        Academic Study Tracker &bull; Appwrite Authentication &bull; MongoDB Atlas
+      <footer className="relative z-10 mt-8 text-center text-xs text-slate-500 space-y-1">
+        <p>Academic Study Tracker &bull; Appwrite Authentication &bull; MongoDB Atlas</p>
+        <p className="text-[11px] text-slate-400">
+          Created by <span className="font-semibold text-slate-300">MD Sheik Rafiwol Karim Rafi</span>
+        </p>
       </footer>
     </div>
   );
