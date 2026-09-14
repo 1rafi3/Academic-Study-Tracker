@@ -179,6 +179,207 @@ export const generateClassInstances = async (req: Request, res: Response): Promi
   }
 };
 
+export const syncScheduleInstances = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { semesterId, courseId, effectiveDate } = req.body;
+
+    if (!semesterId) {
+      res.status(400).json({ success: false, message: 'semesterId is required' });
+      return;
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(semesterId)) {
+      res.status(400).json({ success: false, message: 'Invalid semester ID format' });
+      return;
+    }
+
+    const semester = await Semester.findOne(buildUserFilter(req.userId, { _id: semesterId }));
+    if (!semester) {
+      res.status(404).json({ success: false, message: 'Semester not found or does not belong to you' });
+      return;
+    }
+
+    // Determine effectiveDate: defaults to today if not provided or if invalid
+    let effectiveUTC: Date;
+    if (effectiveDate && typeof effectiveDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(effectiveDate)) {
+      const [y, m, d] = effectiveDate.split('-').map(Number);
+      effectiveUTC = new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0));
+    } else {
+      const now = new Date();
+      effectiveUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+    }
+
+    const semStart = normalizeToUTCMidnight(semester.startDate);
+    const semEnd = normalizeToUTCMidnight(semester.endDate);
+
+    // If effectiveDate is before semester start, clamp to semester start
+    const syncStart = effectiveUTC.getTime() < semStart.getTime() ? semStart : effectiveUTC;
+
+    const courseFilter: Record<string, unknown> = {
+      semesterId,
+      isArchived: { $ne: true },
+    };
+    if (courseId) {
+      if (!mongoose.Types.ObjectId.isValid(courseId)) {
+        res.status(400).json({ success: false, message: 'Invalid course ID format' });
+        return;
+      }
+      courseFilter._id = courseId;
+    }
+
+    const courses = await Course.find(buildUserFilter(req.userId, courseFilter));
+    if (courses.length === 0) {
+      res.status(200).json({
+        success: true,
+        message: 'No courses found to sync',
+        data: { preservedCount: 0, removedObsoleteCount: 0, createdCount: 0 },
+      });
+      return;
+    }
+
+    // Map each course to its active schedule keys: Set of `${dayOfWeek}_${startTime}`
+    const courseScheduleMap = new Map<string, Set<string>>();
+    for (const course of courses) {
+      const activeSlots = new Set<string>();
+      if (course.schedules) {
+        for (const s of course.schedules) {
+          activeSlots.add(`${s.dayOfWeek}_${s.startTime}`);
+        }
+      }
+      courseScheduleMap.set(course._id.toString(), activeSlots);
+    }
+
+    // 1. DATA PRESERVATION: Count how many past / attended instances exist and are untouched
+    const preservedCount = await ClassInstance.countDocuments(
+      buildUserFilter(req.userId, {
+        semesterId: semester._id,
+        ...(courseId ? { courseId } : {}),
+        $or: [
+          { date: { $lt: syncStart } },
+          { attendanceStatus: { $ne: 'unmarked' } },
+          { notes: { $exists: true, $ne: '' } },
+          { topic: { $exists: true, $ne: '' } },
+          { hasHomework: true },
+        ],
+      })
+    );
+
+    // 2. PRUNE OBSOLETE FUTURE PLACEHOLDERS:
+    // Only target instances where:
+    // - date >= syncStart
+    // - attendanceStatus === 'unmarked'
+    // - no notes, no topic, no homework
+    const candidateFuturePlaceholders = await ClassInstance.find(
+      buildUserFilter(req.userId, {
+        semesterId: semester._id,
+        ...(courseId ? { courseId } : {}),
+        date: { $gte: syncStart },
+        attendanceStatus: 'unmarked',
+        $and: [
+          { $or: [{ notes: { $exists: false } }, { notes: '' }] },
+          { $or: [{ topic: { $exists: false } }, { topic: '' }] },
+          { $or: [{ hasHomework: { $exists: false } }, { hasHomework: false }] },
+        ],
+      })
+    );
+
+    const idsToDelete: mongoose.Types.ObjectId[] = [];
+    for (const inst of candidateFuturePlaceholders) {
+      const activeSlots = courseScheduleMap.get(inst.courseId.toString());
+      const slotKey = `${inst.dayOfWeek}_${inst.startTime}`;
+      if (!activeSlots || !activeSlots.has(slotKey)) {
+        idsToDelete.push(inst._id as mongoose.Types.ObjectId);
+      }
+    }
+
+    let removedObsoleteCount = 0;
+    if (idsToDelete.length > 0) {
+      const delResult = await ClassInstance.deleteMany({
+        _id: { $in: idsToDelete },
+      });
+      removedObsoleteCount = delResult.deletedCount || 0;
+    }
+
+    // 3. GENERATE NEW FUTURE INSTANCES from syncStart to semEnd
+    const bulkOps: any[] = [];
+    const current = new Date(syncStart);
+    while (current.getTime() <= semEnd.getTime()) {
+      const dayIndex = current.getUTCDay();
+      const dayOfWeek = DAYS_OF_WEEK[dayIndex];
+      const dateString = formatDateToUTCString(current);
+      const instanceDate = new Date(current);
+
+      const holiday = getBangladeshHoliday(dateString);
+      const initialStatus: ClassStatus = holiday ? 'holiday' : 'scheduled';
+      const holidayName = holiday ? holiday.name : '';
+
+      for (const course of courses) {
+        if (!course.schedules || course.schedules.length === 0) continue;
+
+        for (const schedule of course.schedules) {
+          if (schedule.dayOfWeek === dayOfWeek) {
+            bulkOps.push({
+              updateOne: {
+                filter: {
+                  courseId: course._id,
+                  date: instanceDate,
+                  startTime: schedule.startTime,
+                },
+                update: {
+                  $setOnInsert: {
+                    userId: req.userId,
+                    courseId: course._id,
+                    semesterId: semester._id,
+                    scheduleId: schedule._id,
+                    date: instanceDate,
+                    dateString,
+                    dayOfWeek,
+                    startTime: schedule.startTime,
+                    endTime: schedule.endTime,
+                    room: schedule.room || '',
+                    type: schedule.type || 'Lecture',
+                    status: initialStatus,
+                    cancellationReason: '',
+                    holidayName: holidayName,
+                    attendanceStatus: 'unmarked',
+                    topic: '',
+                    notes: '',
+                    hasHomework: false,
+                    homeworkDetails: '',
+                  },
+                },
+                upsert: true,
+              },
+            });
+          }
+        }
+      }
+
+      current.setUTCDate(current.getUTCDate() + 1);
+    }
+
+    let createdCount = 0;
+    if (bulkOps.length > 0) {
+      const bulkResult = await ClassInstance.bulkWrite(bulkOps);
+      createdCount = bulkResult.upsertedCount;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Routine synced from ${formatDateToUTCString(syncStart)}. ${createdCount} new classes scheduled, ${removedObsoleteCount} obsolete placeholders removed, ${preservedCount} past/active classes preserved.`,
+      data: {
+        effectiveDate: formatDateToUTCString(syncStart),
+        preservedCount,
+        removedObsoleteCount,
+        createdCount,
+      },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to sync routine schedule';
+    res.status(500).json({ success: false, message });
+  }
+};
+
 export const getClassInstances = async (req: Request, res: Response): Promise<void> => {
   try {
     const { semesterId, courseId, date, startDate, endDate, status, limit } = req.query;

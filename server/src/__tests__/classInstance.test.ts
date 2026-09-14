@@ -252,4 +252,65 @@ describe('=== Phase 3: Class Instance Generation & Attendance Tests ===', () => 
     expect(c2Stats.decided).toBe(0);
     expect(c2Stats.percentage).toBe(0);
   });
+
+  it('10. Safely preserves past attended/missed classes when syncing mid-semester schedule changes', async () => {
+    // Generate initial classes (Sept 1 to Sept 14)
+    await request(app).post('/api/class-instances/generate').send({ semesterId });
+
+    // Mark Sept 1 (Tuesday) as attended, Sept 6 (Sunday) as missed
+    const tuesClass = await ClassInstance.findOne({ courseId: course1Id, dayOfWeek: 'Tuesday', dateString: '2026-09-01' });
+    expect(tuesClass).toBeDefined();
+    await ClassInstance.findByIdAndUpdate(tuesClass!._id, { attendanceStatus: 'attended' });
+
+    const sunClass = await ClassInstance.findOne({ courseId: course1Id, dayOfWeek: 'Sunday', dateString: '2026-09-06' });
+    expect(sunClass).toBeDefined();
+    await ClassInstance.findByIdAndUpdate(sunClass!._id, { attendanceStatus: 'missed', notes: 'Lecturer covered chapter 3' });
+
+    // Mid-semester routine change starting effective Sept 7, 2026:
+    // Course 1 drops Tuesday, adds Wednesday 11:00-12:30
+    await Course.findByIdAndUpdate(course1Id, {
+      schedules: [
+        { dayOfWeek: 'Sunday', startTime: '10:00', endTime: '11:30', room: 'Room 302' },
+        { dayOfWeek: 'Wednesday', startTime: '11:00', endTime: '12:30', room: 'Room 405' },
+      ],
+    });
+
+    const syncRes = await request(app)
+      .post('/api/class-instances/sync-schedule')
+      .send({
+        semesterId,
+        courseId: course1Id,
+        effectiveDate: '2026-09-07',
+      });
+
+    expect(syncRes.status).toBe(200);
+    expect(syncRes.body.success).toBe(true);
+    expect(syncRes.body.data.effectiveDate).toBe('2026-09-07');
+    expect(syncRes.body.data.preservedCount).toBeGreaterThanOrEqual(2);
+
+    // Verify PAST classes remain 100% intact:
+    const preservedTues = await ClassInstance.findById(tuesClass!._id);
+    expect(preservedTues?.attendanceStatus).toBe('attended');
+
+    const preservedSun = await ClassInstance.findById(sunClass!._id);
+    expect(preservedSun?.attendanceStatus).toBe('missed');
+    expect(preservedSun?.notes).toBe('Lecturer covered chapter 3');
+
+    // Verify obsolete future Tuesday (Sept 8) placeholder was pruned
+    const obsoleteTues = await ClassInstance.findOne({
+      courseId: course1Id,
+      dateString: '2026-09-08',
+    });
+    expect(obsoleteTues).toBeNull();
+
+    // Verify new future Wednesday (Sept 9) instance was generated
+    const newWed = await ClassInstance.findOne({
+      courseId: course1Id,
+      dateString: '2026-09-09',
+      dayOfWeek: 'Wednesday',
+      startTime: '11:00',
+    });
+    expect(newWed).toBeDefined();
+    expect(newWed?.attendanceStatus).toBe('unmarked');
+  });
 });

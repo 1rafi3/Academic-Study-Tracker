@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { courseApi, semesterApi } from '../api/academicApi.js';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { courseApi, semesterApi, classInstanceApi } from '../api/academicApi.js';
 import type { ISemester, ICourse, DayOfWeek } from '../types/academic.js';
 import {
   DAYS_OF_WEEK_ORDERED,
@@ -17,8 +17,12 @@ import {
   Flame,
   CalendarCheck,
   Palette,
+  RefreshCw,
+  X,
+  ShieldCheck,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext.js';
+import { useToast } from '../context/ToastContext.js';
 
 interface Props {
   selectedSemesterId: string | null;
@@ -33,11 +37,15 @@ export const WeeklyRoutine: React.FC<Props> = ({
 }) => {
   // Customization State
   const { actualTheme } = useTheme();
+  const { showToast } = useToast();
+  const queryClient = useQueryClient();
   const [is12Hour, setIs12Hour] = useState<boolean>(true);
   const [colorTheme, setColorTheme] = useState<'vibrant' | 'parchment' | 'minimal'>('vibrant');
   const [showRoom, setShowRoom] = useState<boolean>(true);
   const [showInstructor, setShowInstructor] = useState<boolean>(true);
   const [showCourseName, setShowCourseName] = useState<boolean>(true);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState<boolean>(false);
+  const [effectiveDate, setEffectiveDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
 
   // Today's weekday
   const todayDayOfWeek = useMemo<DayOfWeek>(() => {
@@ -71,6 +79,24 @@ export const WeeklyRoutine: React.FC<Props> = ({
     queryFn: () =>
       activeSemester ? courseApi.getAll(activeSemester._id) : Promise.resolve([]),
     enabled: Boolean(activeSemester?._id),
+  });
+
+  const syncMutation = useMutation({
+    mutationFn: () => {
+      if (!activeSemester?._id) return Promise.reject(new Error('No active semester selected'));
+      return classInstanceApi.syncSchedule({
+        semesterId: activeSemester._id,
+        effectiveDate,
+      });
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['class-instances'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance-analytics'] });
+      setIsSyncModalOpen(false);
+      showToast(`Routine synced from ${result.effectiveDate}: ${result.createdCount} new classes scheduled, ${result.preservedCount} past classes safe.`, 'success', 4000);
+    },
+    onError: (err: Error) => showToast(`Sync failed: ${err.message}`, 'error'),
   });
 
   // Extract all routine schedule items
@@ -136,6 +162,18 @@ export const WeeklyRoutine: React.FC<Props> = ({
               ))}
             </select>
           </div>
+
+          {/* Sync Calendar Button */}
+          <button
+            type="button"
+            disabled={routineItems.length === 0}
+            onClick={() => setIsSyncModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-none bg-slate-900 hover:bg-slate-800 border border-slate-700 text-indigo-300 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+            title="Synchronize future calendar occurrences if your weekly routine changed"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-indigo-400" />
+            Sync with Calendar
+          </button>
 
           {/* Print / Download PDF Button */}
           <button
@@ -463,6 +501,84 @@ export const WeeklyRoutine: React.FC<Props> = ({
           </span>
         </div>
       </div>
+
+      {/* Sync Routine with Calendar Confirmation Modal */}
+      {isSyncModalOpen && activeSemester && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl p-5 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 text-indigo-400" />
+                Sync Routine with Calendar
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsSyncModalOpen(false)}
+                className="text-slate-400 hover:text-slate-200 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <p className="text-slate-300 leading-relaxed">
+                If your university schedule changed mid-semester, this tool aligns your upcoming calendar with your current weekly routine.
+              </p>
+
+              <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="font-semibold text-slate-200 flex items-center gap-1.5">
+                    <CalendarIcon className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Effective From Date:</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={effectiveDate}
+                    onChange={(e) => setEffectiveDate(e.target.value)}
+                    className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/70 flex items-start gap-2.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-emerald-200/90 leading-relaxed">
+                  <strong className="text-emerald-300 font-semibold">100% History Safe:</strong> Classes and previous attendance recorded before <span className="font-mono font-bold text-emerald-100">{effectiveDate}</span> are permanently protected and will not be touched or overwritten.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setIsSyncModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={syncMutation.isPending}
+                onClick={() => syncMutation.mutate()}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50"
+              >
+                {syncMutation.isPending ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Syncing Future Classes...</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Apply to Future Calendar</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

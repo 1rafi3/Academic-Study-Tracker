@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   generateClassInstances,
+  syncScheduleInstances,
   getClassInstances,
   getClassInstanceById,
   updateAttendance,
@@ -12,8 +13,9 @@ import {
 
 const router = Router();
 
-// Generation & Stats
+// Generation, Sync & Stats
 router.post('/generate', generateClassInstances);
+router.post('/sync-schedule', syncScheduleInstances);
 router.get('/stats', getAttendanceStats);
 
 // List and detail

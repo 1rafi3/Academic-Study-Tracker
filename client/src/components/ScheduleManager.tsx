@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { scheduleApi, courseApi } from '../api/academicApi.js';
+import { scheduleApi, courseApi, classInstanceApi } from '../api/academicApi.js';
 import type { ISchedule, DayOfWeek, ICourse } from '../types/academic.js';
 import { DAYS_OF_WEEK } from '../types/academic.js';
-import { Clock, Plus, Trash2, Edit2, AlertCircle, X, MapPin, Tag } from 'lucide-react';
+import { Clock, Plus, Trash2, Edit2, AlertCircle, X, MapPin, Tag, Calendar as CalendarIcon, RefreshCw, ShieldCheck } from 'lucide-react';
 import { useToast } from '../context/ToastContext.js';
 
 interface Props {
@@ -23,6 +23,7 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
   const [endTime, setEndTime] = useState('11:30');
   const [room, setRoom] = useState('');
   const [type, setType] = useState<'Lecture' | 'Lab' | 'Tutorial' | 'Seminar' | 'Other'>('Lecture');
+  const [effectiveDate, setEffectiveDate] = useState(() => new Date().toISOString().split('T')[0]);
 
   const { data: course } = useQuery<ICourse>({
     queryKey: ['course', selectedCourseId],
@@ -48,13 +49,54 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
     };
   }, [isModalOpen]);
 
+  const semesterIdStr = course?.semesterId
+    ? typeof course.semesterId === 'string'
+      ? course.semesterId
+      : course.semesterId._id
+    : null;
+
+  const syncMutation = useMutation({
+    mutationFn: ({ targetEffectiveDate }: { targetEffectiveDate?: string }) => {
+      if (!semesterIdStr) return Promise.reject(new Error('No semester associated with this course'));
+      return classInstanceApi.syncSchedule({
+        semesterId: semesterIdStr,
+        courseId: selectedCourseId || undefined,
+        effectiveDate: targetEffectiveDate || effectiveDate,
+      });
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['class-instances'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance-analytics'] });
+      showToast(`Routine synced from ${result.effectiveDate}: ${result.createdCount} new slots, ${result.preservedCount} past classes safe.`, 'success', 3500);
+    },
+    onError: (err: Error) => showToast(`Sync error: ${err.message}`, 'error'),
+  });
+
   const addMutation = useMutation({
     mutationFn: (data: Partial<ISchedule>) =>
       selectedCourseId ? scheduleApi.add(selectedCourseId, data) : Promise.reject('No course selected'),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['schedules', selectedCourseId] });
       queryClient.invalidateQueries({ queryKey: ['courses'] });
       closeModal();
+      if (semesterIdStr && selectedCourseId) {
+        try {
+          await classInstanceApi.syncSchedule({
+            semesterId: semesterIdStr,
+            courseId: selectedCourseId,
+            effectiveDate,
+          });
+          queryClient.invalidateQueries({ queryKey: ['class-instances'] });
+          queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
+          queryClient.invalidateQueries({ queryKey: ['attendance-analytics'] });
+          showToast(`Schedule slot added & calendar synced from ${effectiveDate} (past attendance preserved)!`, 'success');
+        } catch {
+          showToast('Schedule slot added.', 'success');
+        }
+      } else {
+        showToast('Schedule slot added.', 'success');
+      }
     },
     onError: (err: Error) => setFormError(err.message),
   });
@@ -64,10 +106,27 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
       selectedCourseId
         ? scheduleApi.update(selectedCourseId, scheduleId, data)
         : Promise.reject('No course selected'),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['schedules', selectedCourseId] });
       queryClient.invalidateQueries({ queryKey: ['courses'] });
       closeModal();
+      if (semesterIdStr && selectedCourseId) {
+        try {
+          await classInstanceApi.syncSchedule({
+            semesterId: semesterIdStr,
+            courseId: selectedCourseId,
+            effectiveDate,
+          });
+          queryClient.invalidateQueries({ queryKey: ['class-instances'] });
+          queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
+          queryClient.invalidateQueries({ queryKey: ['attendance-analytics'] });
+          showToast(`Schedule updated & calendar synced from ${effectiveDate} (previous records intact)!`, 'success');
+        } catch {
+          showToast('Schedule updated.', 'success');
+        }
+      } else {
+        showToast('Schedule updated.', 'success');
+      }
     },
     onError: (err: Error) => setFormError(err.message),
   });
@@ -77,10 +136,25 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
       selectedCourseId
         ? scheduleApi.delete(selectedCourseId, scheduleId)
         : Promise.reject('No course selected'),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['schedules', selectedCourseId] });
       queryClient.invalidateQueries({ queryKey: ['courses'] });
-      showToast('Weekly class schedule slot removed.', 'info');
+      if (semesterIdStr && selectedCourseId) {
+        try {
+          const today = new Date().toISOString().split('T')[0];
+          await classInstanceApi.syncSchedule({
+            semesterId: semesterIdStr,
+            courseId: selectedCourseId,
+            effectiveDate: today,
+          });
+          queryClient.invalidateQueries({ queryKey: ['class-instances'] });
+          queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
+          queryClient.invalidateQueries({ queryKey: ['attendance-analytics'] });
+        } catch {
+          // ignore
+        }
+      }
+      showToast('Weekly class schedule slot removed (past class attendance preserved).', 'info');
     },
     onError: (err: Error) => showToast(`Error deleting schedule: ${err.message}`, 'error'),
   });
@@ -92,6 +166,7 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
     setEndTime('11:30');
     setRoom('');
     setType('Lecture');
+    setEffectiveDate(new Date().toISOString().split('T')[0]);
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -103,6 +178,7 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
     setEndTime(sch.endTime);
     setRoom(sch.room || '');
     setType(sch.type || 'Lecture');
+    setEffectiveDate(new Date().toISOString().split('T')[0]);
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -176,14 +252,26 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
             Configure recurring days & time slots for {course?.courseName || 'this course'}.
           </p>
         </div>
-        <button
-          id="add-schedule-btn"
-          onClick={openCreateModal}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          Add Schedule Slot
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={syncMutation.isPending}
+            onClick={() => syncMutation.mutate({ targetEffectiveDate: effectiveDate })}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 text-indigo-300 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
+            title="Safely re-synchronize future calendar occurrences with this routine without touching previous attendance"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
+            <span>{syncMutation.isPending ? 'Syncing...' : 'Sync Calendar'}</span>
+          </button>
+          <button
+            id="add-schedule-btn"
+            onClick={openCreateModal}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Add Schedule Slot
+          </button>
+        </div>
       </div>
 
       {/* Schedule List */}
@@ -348,6 +436,29 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
                     <option value="Seminar">Seminar</option>
                     <option value="Other">Other</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Mid-Semester Effective Date & Data Preservation Notice */}
+              <div className="pt-2 border-t border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-slate-300 font-semibold flex items-center gap-1.5">
+                    <CalendarIcon className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Apply Routine From Date *</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={effectiveDate}
+                    onChange={(e) => setEffectiveDate(e.target.value)}
+                    className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500"
+                  />
+                </div>
+                <div className="p-2.5 rounded-lg bg-slate-950/70 border border-slate-800 flex items-start gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    <strong className="text-emerald-400 font-medium">Previous Data Protected:</strong> All classes and previous attendance recorded before this date remain 100% untouched. Future routine classes from this date forward will update to match.
+                  </p>
                 </div>
               </div>
             </form>

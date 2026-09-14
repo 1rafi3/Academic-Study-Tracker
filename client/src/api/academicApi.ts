@@ -150,6 +150,27 @@ export const classInstanceApi = {
     });
   },
 
+  async syncSchedule(data: {
+    semesterId: string;
+    courseId?: string;
+    effectiveDate?: string;
+  }): Promise<{
+    effectiveDate: string;
+    preservedCount: number;
+    removedObsoleteCount: number;
+    createdCount: number;
+  }> {
+    return apiRequest<{
+      effectiveDate: string;
+      preservedCount: number;
+      removedObsoleteCount: number;
+      createdCount: number;
+    }>('/class-instances/sync-schedule', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
   async getAll(params?: {
     semesterId?: string;
     courseId?: string;

@@ -868,6 +868,9 @@ export const CalendarDashboard: React.FC<Props> = ({
                 const hasEvents = cell.events.length > 0;
                 const isSelected = cell.dateString === selectedDate;
                 const isToday = cell.isToday;
+                const hasMissedClass = cell.classes.some(
+                  (cls) => cls.attendanceStatus === 'missed' && cls.status !== 'cancelled'
+                );
 
                 return (
                   <button
@@ -875,8 +878,12 @@ export const CalendarDashboard: React.FC<Props> = ({
                     type="button"
                     onClick={() => setSelectedDate(cell.dateString)}
                     className={`min-h-[76px] sm:min-h-[86px] p-2 rounded-xl flex flex-col justify-between text-left transition relative cursor-pointer border ${
-                      isSelected
+                      isSelected && hasMissedClass
+                        ? 'bg-rose-950/90 dark:bg-rose-950/90 bg-rose-100 border-rose-500 shadow-md ring-2 ring-rose-500/60'
+                        : isSelected
                         ? 'bg-indigo-950/80 border-indigo-500 shadow-md ring-2 ring-indigo-500/40'
+                        : hasMissedClass
+                        ? 'bg-rose-950/40 dark:bg-rose-950/40 bg-rose-50/95 border-rose-500/80 dark:border-rose-600/80 shadow-xs ring-1 ring-rose-500/30 hover:bg-rose-950/60 dark:hover:bg-rose-950/60 hover:bg-rose-100'
                         : isToday
                         ? 'bg-slate-900 border-indigo-600/70 shadow-xs'
                         : hasHoliday
@@ -886,12 +893,16 @@ export const CalendarDashboard: React.FC<Props> = ({
                         : 'bg-slate-950/30 border-slate-900/50 opacity-40 hover:opacity-75'
                     }`}
                   >
-                    {/* Top Row: Day Number & Today/Holiday Tag */}
+                    {/* Top Row: Day Number & Today/Holiday/Missed Tag */}
                     <div className="flex items-center justify-between w-full">
                       <span
                         className={`text-xs font-bold ${
-                          isSelected
+                          isSelected && hasMissedClass
+                            ? 'text-rose-200 dark:text-rose-200 text-rose-900'
+                            : isSelected
                             ? 'text-indigo-200'
+                            : hasMissedClass
+                            ? 'text-rose-600 dark:text-rose-400 font-extrabold'
                             : isToday
                             ? 'text-indigo-400 font-extrabold'
                             : hasHoliday
@@ -905,6 +916,11 @@ export const CalendarDashboard: React.FC<Props> = ({
                       </span>
 
                       <div className="flex items-center gap-1">
+                        {hasMissedClass && (
+                          <span className="text-[9px] px-1 py-0.2 rounded bg-rose-600 text-white font-bold tracking-tight shadow-xs">
+                            MISSED
+                          </span>
+                        )}
                         {hasHoliday && (
                           <span className="text-[10px]" title={cell.holiday?.name}>
                             🇧🇩
