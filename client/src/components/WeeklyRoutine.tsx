@@ -533,9 +533,9 @@ export const WeeklyRoutine: React.FC<Props> = ({
                             <td
                               key={`${day}-${slot.slotKey}-class`}
                               rowSpan={rowSpan}
-                              className="h-full p-0 align-middle"
+                              className={`p-0 align-middle ${rowSpan > 1 ? 'relative' : 'h-full'}`}
                             >
-                              <div className="h-full flex flex-col gap-1.5">
+                              <div className={rowSpan > 1 ? 'absolute inset-1 flex flex-col gap-1.5' : 'h-full flex flex-col gap-1.5'}>
                                 {items.map((cls, cIdx) => {
                                   const courseColor = cls.color || '#6366f1';
 
@@ -580,9 +580,7 @@ export const WeeklyRoutine: React.FC<Props> = ({
                                   return (
                                     <div
                                       key={`${cls.courseId}-${cls.scheduleId}-${cIdx}`}
-                                      className={`h-full min-h-[76px] p-2.5 rounded-xl border-2 shadow-sm flex flex-col justify-center items-center text-center relative overflow-hidden transition-all duration-150 ${
-                                        rowSpan > 1 ? 'py-4' : ''
-                                      }`}
+                                      className="h-full min-h-[76px] p-2.5 rounded-xl border-2 shadow-sm flex flex-col justify-center items-center text-center relative overflow-hidden transition-all duration-150"
                                       style={{
                                         backgroundColor: currentBg,
                                         borderColor: currentBorder,
