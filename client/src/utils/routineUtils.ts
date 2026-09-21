@@ -133,41 +133,133 @@ export const extractRoutineItemsFromCourses = (courses: ICourse[]): RoutineBlock
   return items;
 };
 
+export const STANDARD_SLOT_DURATION = 90; // minutes (1h 30m standard university period)
+
+export const STANDARD_WEEKDAYS: DayOfWeek[] = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+];
+
 /**
- * Extracts distinct scheduled class time intervals to generate exact timetable rows
- * (e.g. "9 AM - 10:30 AM", "10:30 AM - 12 PM", "1:30 PM - 3 PM", etc.).
+ * Returns active timetable days. By default, if Friday and Saturday have no classes,
+ * returns Sunday through Thursday matching the standard university timetable structure.
+ * Users can also explicitly force show or hide weekend days.
+ */
+export const getActiveRoutineDays = (
+  items: RoutineBlockItem[],
+  weekendPreference: 'auto' | 'show' | 'hide' | boolean = 'auto'
+): DayOfWeek[] => {
+  if (weekendPreference === true || weekendPreference === 'show') {
+    return DAYS_OF_WEEK_ORDERED;
+  }
+  if (weekendPreference === 'hide') {
+    return STANDARD_WEEKDAYS;
+  }
+  const hasFriday = items.some((i) => i.dayOfWeek === 'Friday');
+  const hasSaturday = items.some((i) => i.dayOfWeek === 'Saturday');
+
+  if (hasFriday || hasSaturday) {
+    return DAYS_OF_WEEK_ORDERED;
+  }
+  return STANDARD_WEEKDAYS;
+};
+
+/**
+ * Calculates how many 90-minute standard slots a class spans.
+ * E.g., a 3-hour lab (180 mins) spans 2 slots (rowSpan = 2).
+ */
+export const calculateSlotSpan = (classItem: RoutineBlockItem): number => {
+  const cStart = timeToMinutes(classItem.startTime);
+  const cEnd = timeToMinutes(classItem.endTime);
+  const duration = Math.max(0, cEnd - cStart);
+  return Math.max(1, Math.round(duration / STANDARD_SLOT_DURATION));
+};
+
+/**
+ * Finds a class for a specific day that starts within the given time slot row.
+ */
+export const findClassStartingInSlot = (
+  day: DayOfWeek,
+  slot: RoutineTimeSlotRow,
+  items: RoutineBlockItem[]
+): RoutineBlockItem | null => {
+  // First priority: Class that starts at or within 20 mins of slot start
+  const match = items.find((item) => {
+    if (item.dayOfWeek !== day) return false;
+    const cStart = timeToMinutes(item.startTime);
+    return Math.abs(cStart - slot.startMinutes) <= 20;
+  });
+
+  if (match) return match;
+
+  // Second priority: Class starting anywhere strictly inside this slot
+  return (
+    items.find((item) => {
+      if (item.dayOfWeek !== day) return false;
+      const cStart = timeToMinutes(item.startTime);
+      return cStart >= slot.startMinutes && cStart < slot.endMinutes;
+    }) || null
+  );
+};
+
+/**
+ * Generates uniform, consistent 90-minute timetable rows (1:30 intervals).
+ * Anchored to standard university periods (09:00 - 10:30, 10:30 - 12:00, etc.),
+ * expanding automatically if classes start earlier or end later.
+ */
+export const generateStandardTimeSlots = (
+  items: RoutineBlockItem[]
+): RoutineTimeSlotRow[] => {
+  let minMinute = 9 * 60;   // 09:00 AM (540)
+  let maxMinute = 18 * 60;  // 06:00 PM (1080)
+
+  for (const item of items) {
+    const sMin = timeToMinutes(item.startTime);
+    const eMin = timeToMinutes(item.endTime);
+    if (sMin < minMinute && sMin >= 6 * 60) {
+      minMinute = Math.floor(sMin / STANDARD_SLOT_DURATION) * STANDARD_SLOT_DURATION;
+    }
+    if (eMin > maxMinute && eMin <= 23 * 60) {
+      maxMinute = Math.ceil(eMin / STANDARD_SLOT_DURATION) * STANDARD_SLOT_DURATION;
+    }
+  }
+
+  const slots: RoutineTimeSlotRow[] = [];
+  for (
+    let current = minMinute;
+    current + STANDARD_SLOT_DURATION <= maxMinute;
+    current += STANDARD_SLOT_DURATION
+  ) {
+    const startStr = minutesToTime(current);
+    const endStr = minutesToTime(current + STANDARD_SLOT_DURATION);
+    const label12 = `${formatTimeDisplay(startStr, true)} - ${formatTimeDisplay(endStr, true)}`;
+    const label24 = `${startStr} - ${endStr}`;
+    const key = `${startStr}-${endStr}`;
+
+    slots.push({
+      slotKey: key,
+      startTime: startStr,
+      endTime: endStr,
+      startMinutes: current,
+      endMinutes: current + STANDARD_SLOT_DURATION,
+      label12,
+      label24,
+    });
+  }
+
+  return slots;
+};
+
+/**
+ * Backward-compatible helper that delegates to generateStandardTimeSlots.
  */
 export const extractUniqueTimeSlots = (
   items: RoutineBlockItem[]
 ): RoutineTimeSlotRow[] => {
-  if (items.length === 0) return [];
-
-  const slotMap = new Map<string, RoutineTimeSlotRow>();
-
-  for (const item of items) {
-    const key = `${item.startTime}-${item.endTime}`;
-    if (!slotMap.has(key)) {
-      const startMin = timeToMinutes(item.startTime);
-      const endMin = timeToMinutes(item.endTime);
-      const label12 = `${formatTimeDisplay(item.startTime, true)} - ${formatTimeDisplay(item.endTime, true)}`;
-      const label24 = `${item.startTime} - ${item.endTime}`;
-
-      slotMap.set(key, {
-        slotKey: key,
-        startTime: item.startTime,
-        endTime: item.endTime,
-        startMinutes: startMin,
-        endMinutes: endMin,
-        label12,
-        label24,
-      });
-    }
-  }
-
-  return Array.from(slotMap.values()).sort((a, b) => {
-    if (a.startMinutes !== b.startMinutes) return a.startMinutes - b.startMinutes;
-    return a.endMinutes - b.endMinutes;
-  });
+  return generateStandardTimeSlots(items);
 };
 
 /**

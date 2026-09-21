@@ -389,6 +389,81 @@ export const ScheduleManager: React.FC<Props> = ({ selectedCourseId }) => {
                 </select>
               </div>
 
+              {/* Standard Time Slot Presets */}
+              <div className="space-y-1.5 p-2.5 rounded-lg bg-slate-950/70 border border-slate-800/80">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-bold text-slate-300 flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-indigo-400" />
+                    Standard Slot Presets (1h 30m / 3h Lab):
+                  </span>
+                  <span className="text-[10px] text-slate-500">1-click select</span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-1">
+                  {[
+                    { label: '9:00 - 10:30', start: '09:00', end: '10:30', isLab: false },
+                    { label: '10:30 - 12:00', start: '10:30', end: '12:00', isLab: false },
+                    { label: '12:00 - 1:30', start: '12:00', end: '13:30', isLab: false },
+                    { label: '1:30 - 3:00', start: '13:30', end: '15:00', isLab: false },
+                    { label: '3:00 - 4:30', start: '15:00', end: '16:30', isLab: false },
+                    { label: '4:30 - 6:00', start: '16:30', end: '18:00', isLab: false },
+                  ].map((preset) => {
+                    const isSelected = startTime === preset.start && endTime === preset.end;
+                    return (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => {
+                          setStartTime(preset.start);
+                          setEndTime(preset.end);
+                        }}
+                        className={`px-1.5 py-1 text-[10px] font-semibold rounded border transition cursor-pointer ${
+                          isSelected
+                            ? 'bg-indigo-600 text-white border-indigo-500 shadow-xs'
+                            : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800 hover:text-white'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* 3-Hour Lab Presets */}
+                <div className="pt-1 flex items-center gap-1.5">
+                  <span className="text-[10px] font-semibold text-indigo-400 uppercase tracking-wider shrink-0">
+                    3h Lab:
+                  </span>
+                  <div className="grid grid-cols-3 gap-1 flex-1">
+                    {[
+                      { label: '9:00 - 12:00', start: '09:00', end: '12:00' },
+                      { label: '12:00 - 3:00', start: '12:00', end: '15:00' },
+                      { label: '3:00 - 6:00', start: '15:00', end: '18:00' },
+                    ].map((preset) => {
+                      const isSelected = startTime === preset.start && endTime === preset.end;
+                      return (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => {
+                            setStartTime(preset.start);
+                            setEndTime(preset.end);
+                            setType('Lab');
+                          }}
+                          className={`px-1.5 py-1 text-[10px] font-semibold rounded border transition cursor-pointer ${
+                            isSelected
+                              ? 'bg-amber-600 text-white border-amber-500 shadow-xs'
+                              : 'bg-slate-900 text-amber-300/80 border-slate-800 hover:bg-slate-800 hover:text-amber-200'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">Start Time (HH:mm) *</label>

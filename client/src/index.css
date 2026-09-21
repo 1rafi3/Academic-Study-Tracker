@@ -629,3 +629,37 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+
+/* ============================================================ */
+/* Print & PDF Export Styles                                   */
+/* ============================================================ */
+@media print {
+  @page {
+    size: landscape;
+    margin: 8mm;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  nav,
+  aside,
+  header,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  table {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
