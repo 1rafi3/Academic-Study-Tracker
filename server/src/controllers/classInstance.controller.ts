@@ -402,14 +402,20 @@ export const getClassInstances = async (req: Request, res: Response): Promise<vo
     }
 
     if (status) {
-      if (!ATTENDANCE_STATUSES.includes(status as AttendanceStatus)) {
+      const statusStr = String(status);
+      // ClassStatus values (status field): scheduled, cancelled, holiday
+      if ((CLASS_STATUSES as string[]).includes(statusStr)) {
+        baseFilter.status = statusStr;
+      // AttendanceStatus values (attendanceStatus field): attended, missed, unmarked
+      } else if ((ATTENDANCE_STATUSES as string[]).includes(statusStr)) {
+        baseFilter.attendanceStatus = statusStr;
+      } else {
         res.status(400).json({
           success: false,
-          message: `Invalid attendance status. Allowed: ${ATTENDANCE_STATUSES.join(', ')}`,
+          message: `Invalid status. Allowed attendance statuses: ${ATTENDANCE_STATUSES.join(', ')}. Allowed class statuses: ${CLASS_STATUSES.join(', ')}`,
         });
         return;
       }
-      baseFilter.attendanceStatus = status;
     }
 
     if (date) {

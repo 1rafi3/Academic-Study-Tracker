@@ -22,6 +22,7 @@ import {
   TrendingUp,
   Filter,
   Check,
+  Ban,
 } from 'lucide-react';
 import { useToast } from '../context/ToastContext.js';
 
@@ -360,17 +361,19 @@ export const ClassInstanceManager: React.FC<Props> = ({
         {/* Status Filter Pills */}
         <div className="flex items-center gap-1.5 text-xs">
           <span className="text-slate-500 text-[11px]">Status:</span>
-          {['ALL', 'unmarked', 'attended', 'missed'].map((st) => (
+          {['ALL', 'unmarked', 'attended', 'missed', 'cancelled'].map((st) => (
             <button
               key={st}
               onClick={() => setStatusFilter(st)}
               className={`px-2.5 py-1 rounded-md text-xs font-medium capitalize transition cursor-pointer ${
                 statusFilter === st
-                  ? 'bg-slate-700 text-white'
+                  ? st === 'cancelled'
+                    ? 'bg-orange-700 text-white'
+                    : 'bg-slate-700 text-white'
                   : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
               }`}
             >
-              {st}
+              {st === 'cancelled' ? '🚫 Cancelled' : st}
             </button>
           ))}
         </div>
@@ -418,11 +421,18 @@ export const ClassInstanceManager: React.FC<Props> = ({
                 timeZone: 'UTC',
               });
 
+              const isCancelled = inst.status === 'cancelled';
+              const isHoliday = inst.status === 'holiday';
+
               return (
                 <div
                   key={inst._id}
                   className={`p-4 rounded-xl border transition flex flex-col justify-between space-y-3 ${
-                    inst.attendanceStatus === 'attended'
+                    isCancelled
+                      ? 'bg-orange-950/20 border-orange-800/60 shadow-xs'
+                      : isHoliday
+                      ? 'bg-violet-950/20 border-violet-800/60 shadow-xs'
+                      : inst.attendanceStatus === 'attended'
                       ? 'bg-emerald-950/20 border-emerald-900/60 shadow-xs'
                       : inst.attendanceStatus === 'missed'
                       ? 'bg-rose-950/20 border-rose-900/60 shadow-xs'
@@ -432,23 +442,35 @@ export const ClassInstanceManager: React.FC<Props> = ({
                   {/* Top Bar: Date & Status Badge */}
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <span className="text-xs font-bold text-slate-100">{formattedDate}</span>
+                      <span className={`text-xs font-bold ${
+                        isCancelled ? 'text-orange-300 line-through' : 'text-slate-100'
+                      }`}>{formattedDate}</span>
                       <p className="text-[11px] text-slate-400">{inst.dayOfWeek}</p>
                     </div>
 
                     {/* Status Chip */}
-                    <div>
-                      {inst.attendanceStatus === 'attended' && (
+                    <div className="flex flex-col items-end gap-1">
+                      {isCancelled && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-950 border border-orange-700/60 text-orange-300 text-[10px] font-bold uppercase tracking-wider">
+                          <Ban className="w-3 h-3" /> Cancelled
+                        </span>
+                      )}
+                      {isHoliday && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-violet-950 border border-violet-700/60 text-violet-300 text-[10px] font-bold uppercase tracking-wider">
+                          🎌 Holiday
+                        </span>
+                      )}
+                      {!isCancelled && !isHoliday && inst.attendanceStatus === 'attended' && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-950 border border-emerald-700/60 text-emerald-300 text-[10px] font-bold uppercase tracking-wider">
                           <CheckCircle2 className="w-3 h-3" /> Attended
                         </span>
                       )}
-                      {inst.attendanceStatus === 'missed' && (
+                      {!isCancelled && !isHoliday && inst.attendanceStatus === 'missed' && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-950 border border-rose-700/60 text-rose-300 text-[10px] font-bold uppercase tracking-wider">
                           <XCircle className="w-3 h-3" /> Missed
                         </span>
                       )}
-                      {inst.attendanceStatus === 'unmarked' && (
+                      {!isCancelled && !isHoliday && inst.attendanceStatus === 'unmarked' && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300 text-[10px] font-medium uppercase tracking-wider">
                           <HelpCircle className="w-3 h-3 text-amber-400" /> Unmarked
                         </span>
@@ -463,7 +485,9 @@ export const ClassInstanceManager: React.FC<Props> = ({
                         className="w-2.5 h-2.5 rounded-full shrink-0"
                         style={{ backgroundColor: course?.color || '#6366f1' }}
                       />
-                      <span className="text-sm font-bold text-slate-100">
+                      <span className={`text-sm font-bold ${
+                        isCancelled ? 'text-orange-200/70 line-through' : 'text-slate-100'
+                      }`}>
                         {course ? getCourseShortName(course) : 'Course'}
                       </span>
                       <span className="text-xs text-slate-300 truncate">
@@ -486,9 +510,39 @@ export const ClassInstanceManager: React.FC<Props> = ({
                         {inst.type || 'Lecture'}
                       </span>
                     </div>
+
+                    {/* Cancellation Reason */}
+                    {isCancelled && inst.cancellationReason && (
+                      <div className="flex items-start gap-1.5 pt-0.5">
+                        <Ban className="w-3 h-3 text-orange-400 shrink-0 mt-0.5" />
+                        <span className="text-[11px] text-orange-300/80 italic">
+                          {inst.cancellationReason}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Holiday Name */}
+                    {isHoliday && inst.holidayName && (
+                      <div className="text-[11px] text-violet-300/80 italic pt-0.5">
+                        🎌 {inst.holidayName}
+                      </div>
+                    )}
                   </div>
 
                   {/* Bottom Action Buttons: Fast Attendance Marking */}
+                  {isCancelled || isHoliday ? (
+                    // Cancelled/Holiday: show info note instead of action buttons
+                    <div className="flex items-center justify-between border-t border-orange-800/30 pt-3">
+                      <span className={`text-[11px] font-medium flex items-center gap-1 ${
+                        isCancelled ? 'text-orange-400/80' : 'text-violet-400/80'
+                      }`}>
+                        {isCancelled
+                          ? <><Ban className="w-3 h-3" /> This class was cancelled — attendance not counted</>  
+                          : <>🎌 This is a holiday — attendance not counted</>  
+                        }
+                      </span>
+                    </div>
+                  ) : (
                   <div className="flex items-center justify-between border-t border-slate-800/60 pt-3">
                     <span className="text-[11px] text-slate-500 font-medium">Quick Attendance:</span>
                     <div className="flex items-center gap-1.5">
@@ -535,6 +589,7 @@ export const ClassInstanceManager: React.FC<Props> = ({
                       )}
                     </div>
                   </div>
+                  )}
                 </div>
               );
             })}

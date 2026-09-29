@@ -34,6 +34,7 @@ export interface ISchedule {
   type?: 'Lecture' | 'Lab' | 'Tutorial' | 'Seminar' | 'Other';
 }
 
+
 export interface ISemester {
   _id: string;
   id?: string;
