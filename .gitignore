@@ -34,3 +34,10 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Private Project Documentation & AI Context (Not tracked in git for privacy)
+PROJECT_DOCUMENTATION.md
+PROJECT_CONTEXT.md
+SERVER_DOCUMENTATION.md
+CLIENT_DOCUMENTATION.md
+AGENTS.md
