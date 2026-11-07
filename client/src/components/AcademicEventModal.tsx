@@ -38,6 +38,8 @@ export const AcademicEventModal: React.FC<Props> = ({
   const [eventType, setEventType] = useState<AcademicEventType>('Quiz');
   const [courseId, setCourseId] = useState<string>(''); // empty string = General
   const [dateString, setDateString] = useState(defaultDate);
+  const [isMultiDay, setIsMultiDay] = useState(false);
+  const [endDateString, setEndDateString] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [room, setRoom] = useState('');
@@ -52,6 +54,9 @@ export const AcademicEventModal: React.FC<Props> = ({
       const cId = typeof event.courseId === 'object' && event.courseId ? event.courseId._id : event.courseId || '';
       setCourseId(cId);
       setDateString(event.dateString || defaultDate);
+      const hasMulti = Boolean(event.endDateString && event.endDateString > (event.dateString || defaultDate));
+      setIsMultiDay(hasMulti);
+      setEndDateString(event.endDateString || event.dateString || defaultDate);
       setStartTime(event.startTime || '');
       setEndTime(event.endTime || '');
       setRoom(event.room || '');
@@ -62,6 +67,8 @@ export const AcademicEventModal: React.FC<Props> = ({
       setEventType('Quiz');
       setCourseId('');
       setDateString(defaultDate);
+      setIsMultiDay(false);
+      setEndDateString(defaultDate);
       setStartTime('');
       setEndTime('');
       setRoom('');
@@ -87,6 +94,7 @@ export const AcademicEventModal: React.FC<Props> = ({
       title: string;
       eventType: AcademicEventType;
       dateString: string;
+      endDateString?: string | null;
       semesterId: string;
       courseId?: string | null;
       startTime?: string;
@@ -108,6 +116,7 @@ export const AcademicEventModal: React.FC<Props> = ({
       title: string;
       eventType: AcademicEventType;
       dateString: string;
+      endDateString?: string | null;
       courseId?: string | null;
       startTime?: string;
       endTime?: string;
@@ -145,6 +154,17 @@ export const AcademicEventModal: React.FC<Props> = ({
       return;
     }
 
+    if (isMultiDay) {
+      if (!endDateString) {
+        setFormError('End date is required for multi-day events');
+        return;
+      }
+      if (endDateString < dateString) {
+        setFormError('End date cannot be earlier than start date');
+        return;
+      }
+    }
+
     if (startTime && endTime && startTime > endTime) {
       setFormError('Start time cannot be after end time');
       return;
@@ -154,6 +174,7 @@ export const AcademicEventModal: React.FC<Props> = ({
       title: title.trim(),
       eventType,
       dateString,
+      endDateString: isMultiDay && endDateString ? endDateString : null,
       courseId: courseId ? courseId : null,
       startTime: startTime.trim(),
       endTime: endTime.trim(),
@@ -260,51 +281,151 @@ export const AcademicEventModal: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Date & Time Slot */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {/* Date */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-indigo-400" />
-                Date <span className="text-rose-400">*</span>
-              </label>
-              <input
-                type="date"
-                required
-                value={dateString}
-                onChange={(e) => setDateString(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500 transition cursor-pointer"
-              />
+          {/* Multi-day Toggle */}
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
+            <div className="space-y-0.5">
+              <span className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-violet-400" />
+                Multi-day Event
+              </span>
+              <p className="text-[11px] text-slate-400">
+                Enable if event spans across two or more consecutive dates
+              </p>
             </div>
-
-            {/* Start Time */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-slate-400" />
-                Start Time
-              </label>
+            <label className="relative inline-flex items-center cursor-pointer">
               <input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500 transition cursor-pointer"
+                type="checkbox"
+                checked={isMultiDay}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setIsMultiDay(checked);
+                  if (checked && (!endDateString || endDateString < dateString)) {
+                    setEndDateString(dateString);
+                  }
+                }}
+                className="sr-only peer"
               />
-            </div>
-
-            {/* End Time */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-slate-400" />
-                End Time
-              </label>
-              <input
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500 transition cursor-pointer"
-              />
-            </div>
+              <div className="w-8 h-4 bg-slate-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-indigo-600"></div>
+            </label>
           </div>
+
+          {/* Date & Time Slot */}
+          {isMultiDay ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Start Date */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-indigo-400" />
+                    Start Date <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={dateString}
+                    onChange={(e) => {
+                      setDateString(e.target.value);
+                      if (endDateString && endDateString < e.target.value) {
+                        setEndDateString(e.target.value);
+                      }
+                    }}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500 transition cursor-pointer"
+                  />
+                </div>
+
+                {/* End Date */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-violet-400" />
+                    End Date <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    min={dateString}
+                    value={endDateString}
+                    onChange={(e) => setEndDateString(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500 transition cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Start Time */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    Start Time
+                  </label>
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500 transition cursor-pointer"
+                  />
+                </div>
+
+                {/* End Time */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    End Time
+                  </label>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500 transition cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Date */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-indigo-400" />
+                  Date <span className="text-rose-400">*</span>
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={dateString}
+                  onChange={(e) => setDateString(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500 transition cursor-pointer"
+                />
+              </div>
+
+              {/* Start Time */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-slate-400" />
+                  Start Time
+                </label>
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500 transition cursor-pointer"
+                />
+              </div>
+
+              {/* End Time */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-slate-400" />
+                  End Time
+                </label>
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500 transition cursor-pointer"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Location / Room */}
           <div className="space-y-1.5">

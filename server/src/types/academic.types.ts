@@ -127,6 +127,8 @@ export interface IAcademicEvent {
   eventType: AcademicEventType;
   date: Date;          // UTC midnight Date
   dateString: string;  // "YYYY-MM-DD"
+  endDate?: Date;          // UTC midnight Date (optional, for multi-day events)
+  endDateString?: string;  // "YYYY-MM-DD" (optional, for multi-day events)
   semesterId: Types.ObjectId | string;
   courseId?: Types.ObjectId | string | null;
   startTime?: string;

@@ -268,6 +268,7 @@ export const CalendarDashboard: React.FC<Props> = ({
       title: string;
       subType: string;
       dateString: string;
+      endDateString?: string;
       courseCode?: string;
       courseColor?: string;
       time?: string;
@@ -286,6 +287,7 @@ export const CalendarDashboard: React.FC<Props> = ({
         title: ev.title,
         subType: ev.eventType,
         dateString: ev.dateString,
+        endDateString: ev.endDateString,
         courseCode: course ? getCourseShortName(course) : undefined,
         courseColor: course?.color || '#8b5cf6',
         time: ev.startTime ? (ev.endTime ? `${ev.startTime} – ${ev.endTime}` : ev.startTime) : undefined,
@@ -340,13 +342,27 @@ export const CalendarDashboard: React.FC<Props> = ({
     return map;
   }, [monthHolidays]);
 
-  // Map dates to academic events
+  // Map dates to academic events (with multi-day event expansion)
   const dateEventsMap = useMemo(() => {
     const map = new Map<string, IAcademicEvent[]>();
     for (const ev of monthEvents) {
-      const existing = map.get(ev.dateString) || [];
-      existing.push(ev);
-      map.set(ev.dateString, existing);
+      // If event has endDateString and it's different from dateString, expand across all dates
+      if (ev.endDateString && ev.endDateString > ev.dateString) {
+        const startParts = ev.dateString.split('-').map(Number);
+        const endParts = ev.endDateString.split('-').map(Number);
+        const startD = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+        const endD = new Date(endParts[0], endParts[1] - 1, endParts[2]);
+        for (let d = new Date(startD); d <= endD; d.setDate(d.getDate() + 1)) {
+          const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          const existing = map.get(ds) || [];
+          existing.push(ev);
+          map.set(ds, existing);
+        }
+      } else {
+        const existing = map.get(ev.dateString) || [];
+        existing.push(ev);
+        map.set(ev.dateString, existing);
+      }
     }
     return map;
   }, [monthEvents]);
@@ -880,10 +896,14 @@ export const CalendarDashboard: React.FC<Props> = ({
                     className={`min-h-[76px] sm:min-h-[86px] p-2 rounded-xl flex flex-col justify-between text-left transition relative cursor-pointer border ${
                       isSelected && hasMissedClass
                         ? 'bg-rose-950/90 dark:bg-rose-950/90 bg-rose-100 border-rose-500 shadow-md ring-2 ring-rose-500/60'
+                        : isSelected && hasEvents
+                        ? 'bg-violet-950/90 border-violet-500 shadow-md ring-2 ring-violet-500/60'
                         : isSelected
                         ? 'bg-indigo-950/80 border-indigo-500 shadow-md ring-2 ring-indigo-500/40'
                         : hasMissedClass
                         ? 'bg-rose-950/40 dark:bg-rose-950/40 bg-rose-50/95 border-rose-500/80 dark:border-rose-600/80 shadow-xs ring-1 ring-rose-500/30 hover:bg-rose-950/60 dark:hover:bg-rose-950/60 hover:bg-rose-100'
+                        : hasEvents
+                        ? 'bg-violet-950/40 border-violet-700/70 hover:border-violet-500/90 hover:bg-violet-950/60 ring-1 ring-violet-500/30 shadow-xs'
                         : isToday
                         ? 'bg-slate-900 border-indigo-600/70 shadow-xs'
                         : hasHoliday
@@ -893,18 +913,22 @@ export const CalendarDashboard: React.FC<Props> = ({
                         : 'bg-slate-950/30 border-slate-900/50 opacity-40 hover:opacity-75'
                     }`}
                   >
-                    {/* Top Row: Day Number & Today/Holiday/Missed Tag */}
+                    {/* Top Row: Day Number & Today/Holiday/Missed/Event Tag */}
                     <div className="flex items-center justify-between w-full">
                       <span
                         className={`text-xs font-bold ${
                           isSelected && hasMissedClass
                             ? 'text-rose-200 dark:text-rose-200 text-rose-900'
+                            : isSelected && hasEvents
+                            ? 'text-violet-200'
                             : isSelected
                             ? 'text-indigo-200'
                             : hasMissedClass
                             ? 'text-rose-600 dark:text-rose-400 font-extrabold'
                             : isToday
                             ? 'text-indigo-400 font-extrabold'
+                            : hasEvents
+                            ? 'text-violet-300 font-extrabold'
                             : hasHoliday
                             ? 'text-amber-300 font-bold'
                             : cell.isCurrentMonth
@@ -928,9 +952,11 @@ export const CalendarDashboard: React.FC<Props> = ({
                         )}
                         {hasEvents && (
                           <span
-                            className="w-2 h-2 rounded-full bg-violet-400 ring-1 ring-violet-300"
+                            className="text-[9px] px-1 py-0.2 rounded bg-violet-600 text-white font-bold tracking-tight shadow-xs"
                             title={`${cell.events.length} Event(s)`}
-                          />
+                          >
+                            EVENT{cell.events.length > 1 ? ` ${cell.events.length}` : ''}
+                          </span>
                         )}
                         {isToday && (
                           <span className="text-[9px] px-1 py-0.2 rounded bg-indigo-600 text-white font-bold tracking-tight">
@@ -940,12 +966,58 @@ export const CalendarDashboard: React.FC<Props> = ({
                       </div>
                     </div>
 
-                    {/* Middle: Holiday or Event mini pill */}
-                    {hasHoliday && (
-                      <div className="text-[9px] text-amber-300/90 font-medium truncate leading-tight">
-                        {cell.holiday?.name.split(' ')[0]}
-                      </div>
-                    )}
+                    {/* Middle: Holiday or Event mini pills (supports continuous multi-day spanning) */}
+                    <div className="space-y-0.5 w-full overflow-hidden my-auto py-0.5">
+                      {hasHoliday && (
+                        <div className="text-[9px] text-amber-300/90 font-medium truncate leading-tight">
+                          {cell.holiday?.name.split(' ')[0]}
+                        </div>
+                      )}
+
+                      {hasEvents && (
+                        <div className="space-y-0.5">
+                          {cell.events.slice(0, 2).map((ev) => {
+                            const isMultiDaySpan = Boolean(ev.endDateString && ev.endDateString > ev.dateString);
+                            const isStart = ev.dateString === cell.dateString;
+                            const isEnd = ev.endDateString === cell.dateString;
+
+                            let borderClass = 'border-violet-700/60 rounded-md';
+                            if (isMultiDaySpan) {
+                              if (isStart) {
+                                borderClass = 'border-violet-600 border-r-dashed rounded-l-md rounded-r-none';
+                              } else if (isEnd) {
+                                borderClass = 'border-violet-600 border-l-dashed rounded-r-md rounded-l-none';
+                              } else {
+                                borderClass = 'border-violet-600/70 border-x-dashed rounded-none';
+                              }
+                            }
+
+                            return (
+                              <div
+                                key={ev._id}
+                                title={`${ev.title} (${ev.eventType})${
+                                  isMultiDaySpan ? ` [${ev.dateString} to ${ev.endDateString}]` : ''
+                                }`}
+                                className={`text-[9px] px-1 py-0.2 font-medium truncate flex items-center gap-0.5 bg-violet-950/90 border text-violet-200 shadow-xs ${borderClass}`}
+                              >
+                                {isMultiDaySpan && isStart && (
+                                  <span className="text-[8px] text-violet-400 font-bold shrink-0">▶</span>
+                                )}
+                                <span className="truncate">{ev.title}</span>
+                                {isMultiDaySpan && isEnd && (
+                                  <span className="text-[8px] text-violet-400 font-bold shrink-0">◀</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                          {cell.events.length > 2 && (
+                            <span className="text-[8px] text-violet-400 font-bold leading-none block">
+                              +{cell.events.length - 2} more
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
 
                     {/* Bottom: Class Indicator Dots */}
                     {hasClasses ? (
@@ -1009,8 +1081,8 @@ export const CalendarDashboard: React.FC<Props> = ({
                 <span className="flex items-center gap-1">
                   <span className="text-xs">🇧🇩</span> Holiday
                 </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-violet-400" /> Event/Quiz
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-2 rounded-xs bg-violet-600/70 border border-violet-400" /> Academic Event
                 </span>
               </div>
 
@@ -1066,8 +1138,120 @@ export const CalendarDashboard: React.FC<Props> = ({
               </div>
             )}
 
-            {/* Section A: Daily Classes */}
+            {/* Section A: Academic Events (Positioned at Top for Immediate Visibility) */}
             <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5 text-violet-400" />
+                  Academic Events
+                  {selectedDayEvents.length > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-violet-950 border border-violet-800 text-violet-300 font-mono font-semibold">
+                      {selectedDayEvents.length}
+                    </span>
+                  )}
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingEvent(null);
+                    setIsEventModalOpen(true);
+                  }}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold cursor-pointer"
+                >
+                  + Add Event
+                </button>
+              </div>
+
+              {selectedDayEvents.length === 0 ? (
+                <div className="p-3 rounded-xl bg-slate-950/40 border border-dashed border-slate-800 text-center text-xs text-slate-500">
+                  No quizzes, exams, or events on this date.
+                </div>
+              ) : (
+                selectedDayEvents.map((ev) => {
+                  const evCourse = typeof ev.courseId === 'object' && ev.courseId ? ev.courseId : null;
+                  const isMultiDay = Boolean(ev.endDateString && ev.endDateString > ev.dateString);
+
+                  return (
+                    <div
+                      key={ev._id}
+                      className="p-3.5 rounded-xl bg-slate-950 border border-violet-900/50 shadow-sm space-y-2 relative overflow-hidden"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider bg-violet-950 border border-violet-800 text-violet-300">
+                              {ev.eventType}
+                            </span>
+                            {isMultiDay && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-md font-medium bg-indigo-950/80 border border-indigo-700/60 text-indigo-300 flex items-center gap-1 font-mono">
+                                <CalendarIcon className="w-3 h-3 text-indigo-400" />
+                                {ev.dateString} &rarr; {ev.endDateString}
+                              </span>
+                            )}
+                            {evCourse ? (
+                              <span className="font-mono font-bold text-xs text-slate-200">
+                                {getCourseShortName(evCourse)}
+                              </span>
+                            ) : (
+                              <span className="text-[11px] text-slate-400 italic">General</span>
+                            )}
+                          </div>
+                          <h5 className="text-xs font-bold text-slate-100 pt-1">{ev.title}</h5>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingEvent(ev);
+                              setIsEventModalOpen(true);
+                            }}
+                            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer"
+                            title="Edit Event"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteEventMutation.mutate(ev._id)}
+                            disabled={deleteEventMutation.isPending}
+                            className="p-1 rounded hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 cursor-pointer"
+                            title="Delete Event"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Event Details */}
+                      <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-400">
+                        {ev.startTime && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-slate-500" />
+                            {ev.startTime} {ev.endTime ? `– ${ev.endTime}` : ''}
+                          </span>
+                        )}
+                        {ev.room && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-slate-500" />
+                            {ev.room}
+                          </span>
+                        )}
+                      </div>
+
+                      {ev.description && (
+                        <p className="text-[11px] text-slate-300/90 whitespace-pre-wrap pt-1 border-t border-slate-900">
+                          {ev.description}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Section B: Daily Classes (Positioned Below Events) */}
+            <div className="space-y-3 pt-3 border-t border-slate-800">
               <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
                 <span>Classes</span>
                 <span className="text-[10px] text-slate-500 font-normal">
@@ -1308,106 +1492,6 @@ export const CalendarDashboard: React.FC<Props> = ({
                 })
               )}
             </div>
-
-            {/* Section B: Academic Events */}
-            <div className="space-y-3 pt-3 border-t border-slate-800">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <Tag className="w-3.5 h-3.5 text-violet-400" />
-                  Academic Events
-                </h4>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingEvent(null);
-                    setIsEventModalOpen(true);
-                  }}
-                  className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold cursor-pointer"
-                >
-                  + Add Event
-                </button>
-              </div>
-
-              {selectedDayEvents.length === 0 ? (
-                <div className="p-3 rounded-xl bg-slate-950/40 border border-dashed border-slate-800 text-center text-xs text-slate-500">
-                  No quizzes, exams, or events on this date.
-                </div>
-              ) : (
-                selectedDayEvents.map((ev) => {
-                  const evCourse = typeof ev.courseId === 'object' && ev.courseId ? ev.courseId : null;
-
-                  return (
-                    <div
-                      key={ev._id}
-                      className="p-3.5 rounded-xl bg-slate-950 border border-violet-900/50 shadow-sm space-y-2 relative overflow-hidden"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider bg-violet-950 border border-violet-800 text-violet-300">
-                              {ev.eventType}
-                            </span>
-                            {evCourse ? (
-                              <span className="font-mono font-bold text-xs text-slate-200">
-                                {getCourseShortName(evCourse)}
-                              </span>
-                            ) : (
-                              <span className="text-[11px] text-slate-400 italic">General</span>
-                            )}
-                          </div>
-                          <h5 className="text-xs font-bold text-slate-100 pt-1">{ev.title}</h5>
-                        </div>
-
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingEvent(ev);
-                              setIsEventModalOpen(true);
-                            }}
-                            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer"
-                            title="Edit Event"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => deleteEventMutation.mutate(ev._id)}
-                            disabled={deleteEventMutation.isPending}
-                            className="p-1 rounded hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 cursor-pointer"
-                            title="Delete Event"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Event Details */}
-                      <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-400">
-                        {ev.startTime && (
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-slate-500" />
-                            {ev.startTime} {ev.endTime ? `– ${ev.endTime}` : ''}
-                          </span>
-                        )}
-                        {ev.room && (
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3 text-slate-500" />
-                            {ev.room}
-                          </span>
-                        )}
-                      </div>
-
-                      {ev.description && (
-                        <p className="text-[11px] text-slate-300/90 whitespace-pre-wrap pt-1 border-t border-slate-900">
-                          {ev.description}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
           </div>
 
           {/* 2. Next Upcoming Events Widget (Holidays, CTs, Quizzes, Assignments, Exams) */}
@@ -1485,7 +1569,9 @@ export const CalendarDashboard: React.FC<Props> = ({
                             </span>
                           )}
                           <span className="text-[10px] text-slate-500 font-mono">
-                            {item.dateString}
+                            {item.endDateString && item.endDateString > item.dateString
+                              ? `${item.dateString} → ${item.endDateString}`
+                              : item.dateString}
                           </span>
                         </div>
                         <h4 className="text-xs font-semibold text-slate-200 group-hover:text-indigo-300 transition truncate">

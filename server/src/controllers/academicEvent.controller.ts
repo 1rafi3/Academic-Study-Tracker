@@ -47,16 +47,33 @@ export const getAcademicEvents = async (req: Request, res: Response): Promise<vo
     }
 
     if (date) {
-      baseFilter.dateString = String(date);
+      const targetDate = normalizeToUTCMidnight(String(date));
+      baseFilter.$or = [
+        { dateString: String(date) },
+        { date: { $lte: targetDate }, endDate: { $gte: targetDate } },
+      ];
     } else if (startDate || endDate) {
-      const dateFilter: Record<string, Date> = {};
-      if (startDate) {
-        dateFilter.$gte = normalizeToUTCMidnight(String(startDate));
+      const startD = startDate ? normalizeToUTCMidnight(String(startDate)) : null;
+      const endD = endDate ? normalizeToUTCMidnight(String(endDate)) : null;
+
+      if (startD && endD) {
+        baseFilter.$and = [
+          { date: { $lte: endD } },
+          {
+            $or: [
+              { endDate: { $gte: startD } },
+              { endDate: null, date: { $gte: startD } },
+            ],
+          },
+        ];
+      } else if (startD) {
+        baseFilter.$or = [
+          { date: { $gte: startD } },
+          { endDate: { $gte: startD } },
+        ];
+      } else if (endD) {
+        baseFilter.date = { $lte: endD };
       }
-      if (endDate) {
-        dateFilter.$lte = normalizeToUTCMidnight(String(endDate));
-      }
-      baseFilter.date = dateFilter;
     }
 
     const filter = buildUserFilter(req.userId, baseFilter);
@@ -117,6 +134,8 @@ export const createAcademicEvent = async (req: Request, res: Response): Promise<
       endTime,
       room,
       description,
+      endDate,
+      endDateString: reqEndDateString,
     } = req.body;
 
     // Validate required fields
@@ -173,6 +192,23 @@ export const createAcademicEvent = async (req: Request, res: Response): Promise<
         eventDate.getUTCDate()
       ).padStart(2, '0')}`;
 
+    // Optional end date for multi-day events
+    let finalEndDate: Date | null = null;
+    let finalEndDateString: string | null = null;
+    const endDateInput = endDate || reqEndDateString;
+    if (endDateInput) {
+      finalEndDate = normalizeToUTCMidnight(endDateInput);
+      finalEndDateString =
+        reqEndDateString ||
+        `${finalEndDate.getUTCFullYear()}-${String(finalEndDate.getUTCMonth() + 1).padStart(2, '0')}-${String(
+          finalEndDate.getUTCDate()
+        ).padStart(2, '0')}`;
+      if (finalEndDate < eventDate) {
+        res.status(400).json({ success: false, message: 'End date cannot be before start date' });
+        return;
+      }
+    }
+
     // Optional time range validation
     if (startTime && endTime && startTime > endTime) {
       res.status(400).json({ success: false, message: 'Start time cannot be after end time' });
@@ -185,6 +221,8 @@ export const createAcademicEvent = async (req: Request, res: Response): Promise<
       eventType,
       date: eventDate,
       dateString,
+      endDate: finalEndDate,
+      endDateString: finalEndDateString,
       semesterId: semester._id,
       courseId: finalCourseId,
       startTime: typeof startTime === 'string' ? startTime.trim() : '',
@@ -227,6 +265,8 @@ export const updateAcademicEvent = async (req: Request, res: Response): Promise<
       endTime,
       room,
       description,
+      endDate,
+      endDateString: reqEndDateString,
     } = req.body;
 
     const updateFields: Record<string, unknown> = {};
@@ -281,6 +321,22 @@ export const updateAcademicEvent = async (req: Request, res: Response): Promise<
     if (endTime !== undefined) updateFields.endTime = typeof endTime === 'string' ? endTime.trim() : '';
     if (room !== undefined) updateFields.room = typeof room === 'string' ? room.trim() : '';
     if (description !== undefined) updateFields.description = typeof description === 'string' ? description.trim() : '';
+
+    if (reqEndDateString !== undefined || endDate !== undefined) {
+      if (reqEndDateString === null || reqEndDateString === '' || endDate === null) {
+        updateFields.endDate = null;
+        updateFields.endDateString = null;
+      } else {
+        const endDateInput = endDate || reqEndDateString;
+        const computedEndDate = normalizeToUTCMidnight(endDateInput);
+        updateFields.endDate = computedEndDate;
+        updateFields.endDateString =
+          reqEndDateString ||
+          `${computedEndDate.getUTCFullYear()}-${String(computedEndDate.getUTCMonth() + 1).padStart(2, '0')}-${String(
+            computedEndDate.getUTCDate()
+          ).padStart(2, '0')}`;
+      }
+    }
 
     const updated = await AcademicEvent.findOneAndUpdate(
       buildUserFilter(req.userId, { _id: id }),

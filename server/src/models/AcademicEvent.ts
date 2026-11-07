@@ -36,6 +36,15 @@ const academicEventSchema = new Schema<IAcademicEventDocument>(
       required: [true, 'Event date string (YYYY-MM-DD) is required'],
       index: true,
     },
+    endDate: {
+      type: Date,
+      default: null,
+    },
+    endDateString: {
+      type: String,
+      default: null,
+      trim: true,
+    },
     semesterId: {
       type: Schema.Types.ObjectId,
       ref: 'Semester',

@@ -97,6 +97,8 @@ export interface IAcademicEvent {
   eventType: AcademicEventType;
   date: string;
   dateString: string;
+  endDate?: string;
+  endDateString?: string;
   semesterId: ISemester | string;
   courseId?: ICourse | string | null;
   startTime?: string;

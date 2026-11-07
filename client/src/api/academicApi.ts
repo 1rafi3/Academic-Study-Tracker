@@ -276,6 +276,7 @@ export const academicEventApi = {
     title: string;
     eventType: AcademicEventType;
     dateString: string;
+    endDateString?: string | null;
     semesterId: string;
     courseId?: string | null;
     startTime?: string;
@@ -295,6 +296,7 @@ export const academicEventApi = {
       title?: string;
       eventType?: AcademicEventType;
       dateString?: string;
+      endDateString?: string | null;
       courseId?: string | null;
       startTime?: string;
       endTime?: string;
