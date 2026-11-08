@@ -61,6 +61,7 @@ export function UIThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
     root.setAttribute('data-ui-theme', uiTheme);
+    document.body.setAttribute('data-ui-theme', uiTheme);
   }, [uiTheme]);
 
   const setUITheme = (newTheme: UIThemeId) => {

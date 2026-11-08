@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuth } from './context/AuthContext.js';
+import { useUITheme } from './context/UIThemeContext.js';
 import { AuthScreen } from './components/auth/AuthScreen.js';
 import { LoadingScreen } from './components/auth/LoadingScreen.js';
 import { Navbar } from './components/Navbar.js';
@@ -27,6 +28,7 @@ const queryClient = new QueryClient({
 });
 
 function MainDashboard() {
+  const { uiTheme } = useUITheme();
   const [activeTab, setActiveTab] = useState<TabType>('calendar');
   const [selectedSemesterId, setSelectedSemesterId] = useState<string | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
@@ -37,7 +39,12 @@ function MainDashboard() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center p-3 sm:p-6 md:p-8 selection:bg-indigo-500/30 selection:text-indigo-200 print:p-0 print:m-0 print:bg-white print:min-h-0 transition-colors duration-200">
+    <div
+      data-ui-theme={uiTheme}
+      className={`min-h-screen flex flex-col items-center p-3 sm:p-6 md:p-8 selection:bg-indigo-500/30 selection:text-indigo-200 print:p-0 print:m-0 print:bg-white print:min-h-0 transition-colors duration-200 ${
+        uiTheme === 'neo-brutalist' ? 'theme-neo-brutalist font-sans' : ''
+      }`}
+    >
       {/* Dynamic atmospheric background glow accents */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 print:hidden opacity-75">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[32rem] h-[32rem] bg-indigo-600/15 dark:bg-indigo-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '8s' }} />

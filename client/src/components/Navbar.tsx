@@ -43,7 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
   };
 
   return (
-    <header className="w-full glass-panel rounded-2xl sm:rounded-3xl p-3 sm:py-3.5 sm:px-6 mb-4 transition-all duration-200 relative print:hidden shadow-lg border border-slate-200/80 dark:border-white/10">
+    <header className="w-full glass-panel rounded-2xl sm:rounded-3xl p-3 sm:py-3.5 sm:px-6 mb-4 transition-all duration-200 relative z-40 print:hidden shadow-lg border border-slate-200/80 dark:border-white/10">
       {/* Top Right Controls */}
       <div className="flex sm:absolute sm:top-3.5 sm:right-5 justify-end items-center gap-1.5 sm:gap-2 mb-2 sm:mb-0 z-20">
         {/* UI Design System Switcher */}
