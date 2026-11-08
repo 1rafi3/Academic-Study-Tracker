@@ -28,6 +28,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext.js';
+import { useUITheme } from '../context/UIThemeContext.js';
 import { useToast } from '../context/ToastContext.js';
 
 interface Props {
@@ -56,6 +57,8 @@ export const WeeklyRoutine: React.FC<Props> = ({
 }) => {
   // Customization State
   const { actualTheme } = useTheme();
+  const { uiTheme } = useUITheme();
+  const isBento = uiTheme === 'bento-glass';
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
@@ -208,7 +211,9 @@ export const WeeklyRoutine: React.FC<Props> = ({
   return (
     <div className="space-y-6 print:space-y-0 print:m-0 print:p-0 font-sans">
       {/* Top Header Controls (Hidden on print) */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl backdrop-blur-md flex flex-wrap items-center justify-between gap-4 print:hidden">
+      <div className={`p-4 sm:p-5 rounded-2xl border shadow-xl flex flex-wrap items-center justify-between gap-4 print:hidden ${
+        isBento ? 'bento-card' : 'bg-slate-900 border-slate-800 backdrop-blur-md'
+      }`}>
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
@@ -317,7 +322,9 @@ export const WeeklyRoutine: React.FC<Props> = ({
 
       {/* Routine Display Customization Bar (Hidden on print) */}
       {routineItems.length > 0 && (
-        <div className="p-3 sm:p-4 rounded-xl bg-slate-900 border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs print:hidden shadow-sm">
+        <div className={`p-3 sm:p-4 rounded-xl border flex flex-wrap items-center justify-between gap-3 text-xs print:hidden shadow-sm ${
+          isBento ? 'bento-card' : 'bg-slate-900 border-slate-800'
+        }`}>
           <div className="flex items-center gap-2 text-slate-300 font-bold uppercase tracking-wider text-[11px]">
             <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-400" />
             Timetable Display:
@@ -406,7 +413,9 @@ export const WeeklyRoutine: React.FC<Props> = ({
       )}
 
       {/* Main Timetable Card (Standard Uniform Table Grid) */}
-      <div className="p-4 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl backdrop-blur-md space-y-4 print:p-0 print:border-none print:shadow-none print:bg-white print:text-slate-900 print:space-y-2">
+      <div className={`p-4 sm:p-6 rounded-2xl border shadow-2xl space-y-4 print:p-0 print:border-none print:shadow-none print:bg-white print:text-slate-900 print:space-y-2 ${
+        isBento ? 'bento-card' : 'bg-slate-900 border-slate-800 backdrop-blur-md'
+      }`}>
         {/* Timetable Header Title Bar (Matches University Timetable Reference) */}
         <div className="border-b border-slate-800 pb-3 flex flex-wrap items-center justify-between gap-2 print:border-b-2 print:border-slate-800 print:pb-2">
           <div>

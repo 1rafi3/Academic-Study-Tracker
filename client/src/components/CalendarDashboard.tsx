@@ -20,6 +20,7 @@ import type {
 import { getCourseShortName } from '../utils/courseUtils.js';
 import { ClassNotesModal } from './ClassNotesModal.js';
 import { AcademicEventModal } from './AcademicEventModal.js';
+import { useUITheme } from '../context/UIThemeContext.js';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -88,6 +89,8 @@ export const CalendarDashboard: React.FC<Props> = ({
   onNavigateToSetup,
   onNavigateToGenerator,
 }) => {
+  const { uiTheme } = useUITheme();
+  const isBento = uiTheme === 'bento-glass';
   const queryClient = useQueryClient();
   const todayString = useMemo(() => getTodayDateString(), []);
 
@@ -721,7 +724,9 @@ export const CalendarDashboard: React.FC<Props> = ({
       )}
 
       {/* Top Filter Bar: Semester Switcher, Course Filter & Month Controls */}
-      <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
+      <div className={`p-4 rounded-2xl border shadow-md flex flex-wrap items-center justify-between gap-4 ${
+        isBento ? 'bento-card' : 'bg-slate-900/90 border-slate-800 backdrop-blur-md'
+      }`}>
         {/* Left: Filters */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Semester Selector */}
@@ -824,7 +829,9 @@ export const CalendarDashboard: React.FC<Props> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column (7 cols): Month Calendar Grid */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md shadow-lg space-y-4">
+          <div className={`p-5 rounded-2xl border shadow-lg space-y-4 ${
+            isBento ? 'bento-card' : 'bg-slate-900/80 border-slate-800 backdrop-blur-md'
+          }`}>
             {/* Calendar Header with Quick Summary */}
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
               <div>
@@ -894,6 +901,8 @@ export const CalendarDashboard: React.FC<Props> = ({
                     type="button"
                     onClick={() => setSelectedDate(cell.dateString)}
                     className={`min-h-[76px] sm:min-h-[86px] p-2 rounded-xl flex flex-col justify-between text-left transition relative cursor-pointer border ${
+                      isBento ? 'hover:scale-[1.02] shadow-2xs backdrop-blur-md' : ''
+                    } ${
                       isSelected && hasMissedClass
                         ? 'bg-rose-950/90 dark:bg-rose-950/90 bg-rose-100 border-rose-500 shadow-md ring-2 ring-rose-500/60'
                         : isSelected && hasEvents
@@ -1103,7 +1112,9 @@ export const CalendarDashboard: React.FC<Props> = ({
         {/* Right Column (5 cols): Daily Class View, Academic Events & Upcoming Classes */}
         <div className="lg:col-span-5 space-y-4">
           {/* 1. Selected Date Inspector */}
-          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md shadow-lg space-y-4">
+          <div className={`p-5 rounded-2xl border shadow-lg space-y-4 ${
+            isBento ? 'bento-card' : 'bg-slate-900/80 border-slate-800 backdrop-blur-md'
+          }`}>
             <div className="flex items-start justify-between gap-2 border-b border-slate-800/80 pb-3">
               <div>
                 <div className="flex items-center gap-2">
@@ -1495,7 +1506,9 @@ export const CalendarDashboard: React.FC<Props> = ({
           </div>
 
           {/* 2. Next Upcoming Events Widget (Holidays, CTs, Quizzes, Assignments, Exams) */}
-          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-md shadow-lg space-y-3">
+          <div className={`p-5 rounded-2xl border shadow-lg space-y-3 ${
+            isBento ? 'bento-card' : 'bg-slate-900/80 border-slate-800 backdrop-blur-md'
+          }`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-violet-400" />

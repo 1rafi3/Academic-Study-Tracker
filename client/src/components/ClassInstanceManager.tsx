@@ -25,6 +25,7 @@ import {
   Ban,
 } from 'lucide-react';
 import { useToast } from '../context/ToastContext.js';
+import { useUITheme } from '../context/UIThemeContext.js';
 
 interface Props {
   selectedSemesterId: string | null;
@@ -35,6 +36,8 @@ export const ClassInstanceManager: React.FC<Props> = ({
   selectedSemesterId,
   onSelectSemester,
 }) => {
+  const { uiTheme } = useUITheme();
+  const isBento = uiTheme === 'bento-glass';
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [selectedCourseFilter, setSelectedCourseFilter] = useState<string>('ALL');
@@ -160,7 +163,9 @@ export const ClassInstanceManager: React.FC<Props> = ({
   return (
     <div className="space-y-6">
       {/* Top Header & Generation Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-sm">
+      <div className={`flex flex-wrap items-center justify-between gap-4 p-5 rounded-2xl border ${
+        isBento ? 'bento-card' : 'bg-slate-900/80 border-slate-800 backdrop-blur-sm'
+      }`}>
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <CalendarDays className="w-5 h-5 text-indigo-400" />
@@ -232,7 +237,9 @@ export const ClassInstanceManager: React.FC<Props> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             {/* Overall Percentage Card */}
-            <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-900/60 shadow-xs flex flex-col justify-between">
+            <div className={`p-4 rounded-xl border flex flex-col justify-between ${
+              isBento ? 'bento-card' : 'bg-white dark:bg-slate-900 border-indigo-200 dark:border-indigo-900/60 shadow-xs'
+            }`}>
               <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-300">Overall Attendance</span>
               <div className="my-2 flex items-baseline gap-2">
                 <span className="text-3xl font-extrabold text-slate-900 dark:text-white">
@@ -251,7 +258,9 @@ export const ClassInstanceManager: React.FC<Props> = ({
             </div>
 
             {/* Attended Card */}
-            <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between">
+            <div className={`p-4 rounded-xl border flex flex-col justify-between ${
+              isBento ? 'bento-card bento-glow-safe border-emerald-500/20' : 'bg-slate-900/80 border-slate-800'
+            }`}>
               <div className="flex items-center justify-between text-xs text-emerald-400">
                 <span>Attended Classes</span>
                 <CheckCircle2 className="w-4 h-4" />
@@ -264,7 +273,9 @@ export const ClassInstanceManager: React.FC<Props> = ({
             </div>
 
             {/* Missed Card */}
-            <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between">
+            <div className={`p-4 rounded-xl border flex flex-col justify-between ${
+              isBento ? 'bento-card bento-glow-danger border-rose-500/20' : 'bg-slate-900/80 border-slate-800'
+            }`}>
               <div className="flex items-center justify-between text-xs text-rose-400">
                 <span>Missed Classes</span>
                 <XCircle className="w-4 h-4" />
@@ -277,7 +288,9 @@ export const ClassInstanceManager: React.FC<Props> = ({
             </div>
 
             {/* Unmarked Card */}
-            <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between">
+            <div className={`p-4 rounded-xl border flex flex-col justify-between ${
+              isBento ? 'bento-card' : 'bg-slate-900/80 border-slate-800'
+            }`}>
               <div className="flex items-center justify-between text-xs text-amber-400">
                 <span>Unmarked Classes</span>
                 <HelpCircle className="w-4 h-4" />

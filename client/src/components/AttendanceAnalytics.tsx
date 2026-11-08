@@ -27,6 +27,8 @@ import {
   Calculator,
 } from 'lucide-react';
 import { getCourseShortName } from '../utils/courseUtils.js';
+import { useUITheme } from '../context/UIThemeContext.js';
+import { BentoAttendanceAnalyticsView } from './views/BentoAttendanceAnalyticsView.js';
 
 interface Props {
   selectedSemesterId: string | null;
@@ -44,6 +46,8 @@ export const AttendanceAnalytics: React.FC<Props> = ({
   onNavigateToCalendar,
   onNavigateToGpa,
 }) => {
+  const { uiTheme } = useUITheme();
+
   // State
   const [targetPercentage, setTargetPercentage] = useState<number>(75);
   const [selectedCourseId, setSelectedCourseId] = useState<string>('all');
@@ -135,6 +139,31 @@ export const AttendanceAnalytics: React.FC<Props> = ({
     }
   };
 
+  // Modern Bento Glass Variant
+  if (uiTheme === 'bento-glass') {
+    return (
+      <BentoAttendanceAnalyticsView
+        semesters={semesters}
+        activeSemester={activeSemester}
+        courses={courses}
+        selectedSemesterId={selectedSemesterId}
+        selectedCourseId={selectedCourseId}
+        targetPercentage={targetPercentage}
+        overall={overall}
+        courseAnalytics={courseAnalytics}
+        analyticsLoading={analyticsLoading}
+        analyticsError={analyticsError}
+        onSelectSemester={onSelectSemester}
+        setSelectedCourseId={setSelectedCourseId}
+        setTargetPercentage={setTargetPercentage}
+        onNavigateToCalendar={onNavigateToCalendar}
+        onNavigateToGpa={onNavigateToGpa}
+        getStatusBadge={getStatusBadge}
+      />
+    );
+  }
+
+  // Classic View (100% Preserved)
   return (
     <div className="space-y-6">
       {/* Top Header & Interactive Target Selector Bar */}

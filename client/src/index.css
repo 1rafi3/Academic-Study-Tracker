@@ -663,3 +663,59 @@
     break-inside: avoid;
   }
 }
+
+/* ============================================================ */
+/* Design System: Bento Glass (Modern SaaS / Frosted Glass)     */
+/* ============================================================ */
+[data-ui-theme="bento-glass"] {
+  --bento-bg: rgba(15, 23, 42, 0.65);
+  --bento-border: rgba(255, 255, 255, 0.08);
+  --bento-hover-border: rgba(139, 92, 246, 0.45);
+  --bento-glow: rgba(139, 92, 246, 0.15);
+}
+
+[data-ui-theme="bento-glass"][data-theme="light"],
+[data-ui-theme="bento-glass"].light {
+  --bento-bg: rgba(255, 255, 255, 0.85);
+  --bento-border: rgba(0, 0, 0, 0.08);
+  --bento-hover-border: rgba(99, 102, 241, 0.4);
+  --bento-glow: rgba(99, 102, 241, 0.1);
+}
+
+.bento-card {
+  background: var(--bento-bg, rgba(15, 23, 42, 0.65));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--bento-border, rgba(255, 255, 255, 0.08));
+  border-radius: 1.25rem;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bento-card:hover {
+  border-color: var(--bento-hover-border, rgba(139, 92, 246, 0.45));
+  box-shadow: 0 12px 30px -10px var(--bento-glow, rgba(139, 92, 246, 0.15));
+}
+
+.bento-glow-safe {
+  box-shadow: 0 0 35px -8px rgba(16, 185, 129, 0.25);
+}
+
+.bento-glow-warning {
+  box-shadow: 0 0 35px -8px rgba(245, 158, 11, 0.25);
+}
+
+.bento-glow-danger {
+  box-shadow: 0 0 35px -8px rgba(244, 63, 94, 0.25);
+}
+
+.bento-glow-event {
+  box-shadow: 0 0 35px -8px rgba(139, 92, 246, 0.25);
+}
+
+.glass-modal {
+  background: rgba(15, 23, 42, 0.92) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6) !important;
+}
