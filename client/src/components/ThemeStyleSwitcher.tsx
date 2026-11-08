@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Palette, Check, Sparkles, Layers, ChevronDown } from 'lucide-react';
+import { Palette, Check, Sparkles, Layers, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { useUITheme, type UIThemeId } from '../context/UIThemeContext.js';
 
 export const ThemeStyleSwitcher: React.FC = () => {
@@ -27,8 +27,8 @@ export const ThemeStyleSwitcher: React.FC = () => {
     switch (id) {
       case 'bento-glass':
         return <Sparkles className="w-3.5 h-3.5 text-violet-400" />;
-      case 'neo-brutalist':
-        return <Palette className="w-3.5 h-3.5 text-amber-400" />;
+      case 'minimalist':
+        return <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-400" />;
       case 'classic':
       default:
         return <Layers className="w-3.5 h-3.5 text-indigo-400" />;
@@ -59,7 +59,7 @@ export const ThemeStyleSwitcher: React.FC = () => {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-700/80 shadow-2xl backdrop-blur-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
           <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800/80 mb-1">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">

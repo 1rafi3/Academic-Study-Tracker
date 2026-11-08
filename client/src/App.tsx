@@ -41,9 +41,7 @@ function MainDashboard() {
   return (
     <div
       data-ui-theme={uiTheme}
-      className={`min-h-screen flex flex-col items-center p-3 sm:p-6 md:p-8 selection:bg-indigo-500/30 selection:text-indigo-200 print:p-0 print:m-0 print:bg-white print:min-h-0 transition-colors duration-200 ${
-        uiTheme === 'neo-brutalist' ? 'theme-neo-brutalist font-sans' : ''
-      }`}
+      className="min-h-screen flex flex-col items-center p-3 sm:p-6 md:p-8 selection:bg-indigo-500/30 selection:text-indigo-200 print:p-0 print:m-0 print:bg-white print:min-h-0 transition-colors duration-200"
     >
       {/* Dynamic atmospheric background glow accents */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 print:hidden opacity-75">
@@ -58,7 +56,7 @@ function MainDashboard() {
 
         {/* Tab 1: Main Academic Calendar & Dashboard */}
         {activeTab === 'calendar' && (
-          <main className="space-y-6">
+          <main className="space-y-6 relative z-10">
             <CalendarDashboard
               selectedSemesterId={selectedSemesterId}
               onSelectSemester={handleSelectSemester}
@@ -70,7 +68,7 @@ function MainDashboard() {
 
         {/* Tab 2: Study Notes & Chronological Lecture Timeline (Phase 5) */}
         {activeTab === 'notes' && (
-          <main className="space-y-6">
+          <main className="space-y-6 relative z-10">
             <CourseNotesTimeline
               selectedSemesterId={selectedSemesterId}
               onSelectSemester={handleSelectSemester}
@@ -82,7 +80,7 @@ function MainDashboard() {
 
         {/* Tab 3: Weekly Routine Generator, Print & PDF Export (Phase 9) */}
         {activeTab === 'routine' && (
-          <main className="space-y-6">
+          <main className="space-y-6 relative z-10">
             <WeeklyRoutine
               selectedSemesterId={selectedSemesterId}
               onSelectSemester={handleSelectSemester}
@@ -93,7 +91,7 @@ function MainDashboard() {
 
         {/* Tab 4: Attendance Analytics, Targets & Bunk/Recovery Forecast (Phase 7) */}
         {activeTab === 'analytics' && (
-          <main className="space-y-6">
+          <main className="space-y-6 relative z-10">
             <AttendanceAnalytics
               selectedSemesterId={selectedSemesterId}
               onSelectSemester={handleSelectSemester}
@@ -106,7 +104,7 @@ function MainDashboard() {
 
         {/* Tab: GPA & CGPA Calculator */}
         {activeTab === 'gpa' && (
-          <main className="space-y-6">
+          <main className="space-y-6 relative z-10">
             <GpaCalculator
               selectedSemesterId={selectedSemesterId}
               onSelectSemester={handleSelectSemester}
@@ -117,7 +115,7 @@ function MainDashboard() {
 
         {/* Tab 4: Backup, Restore, CSV Exports & Reports (Phase 8) */}
         {activeTab === 'backup' && (
-          <main className="space-y-6">
+          <main className="space-y-6 relative z-10">
             <BackupData
               selectedSemesterId={selectedSemesterId}
               onSelectSemester={handleSelectSemester}
@@ -127,7 +125,7 @@ function MainDashboard() {
 
         {/* Tab 5: Class Instances & Attendance Tracking */}
         {activeTab === 'classes' && (
-          <main className="space-y-6">
+          <main className="space-y-6 relative z-10">
             <ClassInstanceManager
               selectedSemesterId={selectedSemesterId}
               onSelectSemester={handleSelectSemester}
@@ -137,7 +135,7 @@ function MainDashboard() {
 
         {/* Tab 4: Academic Setup (Semesters, Courses, Schedules) */}
         {activeTab === 'academic' && (
-          <main className="space-y-6">
+          <main className="space-y-6 relative z-10">
             {/* Section 1: Semesters */}
             <section className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
               <SemesterManager

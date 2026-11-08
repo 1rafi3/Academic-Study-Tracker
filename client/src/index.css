@@ -668,10 +668,10 @@
 /* Design System: Bento Glass (Modern SaaS / Frosted Glass)     */
 /* ============================================================ */
 [data-ui-theme="bento-glass"] {
-  --bento-bg: rgba(15, 23, 42, 0.65);
-  --bento-border: rgba(255, 255, 255, 0.1);
-  --bento-hover-border: rgba(139, 92, 246, 0.5);
-  --bento-glow: rgba(139, 92, 246, 0.2);
+  --bento-bg: rgba(15, 23, 42, 0.7);
+  --bento-border: rgba(255, 255, 255, 0.08);
+  --bento-hover-border: rgba(139, 92, 246, 0.4);
+  --bento-glow: rgba(139, 92, 246, 0.15);
 }
 
 [data-ui-theme="bento-glass"][data-theme="light"],
@@ -682,38 +682,25 @@
   --bento-glow: rgba(99, 102, 241, 0.1);
 }
 
-/* Transform all major panels in Bento Glass mode */
-[data-ui-theme="bento-glass"] .bg-slate-900,
-[data-ui-theme="bento-glass"] .bg-slate-900\/90,
-[data-ui-theme="bento-glass"] .bg-slate-900\/80,
-[data-ui-theme="bento-glass"] .glass-panel {
-  background: var(--bento-bg, rgba(15, 23, 42, 0.65)) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  border: 1px solid var(--bento-border, rgba(255, 255, 255, 0.1)) !important;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px -5px rgba(139, 92, 246, 0.12) !important;
-  border-radius: 1.25rem !important;
+/* Subtle ambient backdrop aura for Bento Glass */
+[data-ui-theme="bento-glass"] body {
+  background-attachment: fixed;
 }
 
-[data-ui-theme="bento-glass"] button.bg-indigo-600 {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
-  box-shadow: 0 0 20px -3px rgba(139, 92, 246, 0.5) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  border-radius: 0.75rem !important;
-}
-
+/* Polished Bento Card with frosted glass & smooth hover */
 .bento-card {
-  background: var(--bento-bg, rgba(15, 23, 42, 0.65));
+  background: var(--bento-bg, rgba(15, 23, 42, 0.7));
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--bento-border, rgba(255, 255, 255, 0.08));
   border-radius: 1.25rem;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .bento-card:hover {
-  border-color: var(--bento-hover-border, rgba(139, 92, 246, 0.45));
-  box-shadow: 0 12px 30px -10px var(--bento-glow, rgba(139, 92, 246, 0.15));
+  border-color: var(--bento-hover-border, rgba(139, 92, 246, 0.4));
+  box-shadow: 0 12px 32px -8px var(--bento-glow, rgba(139, 92, 246, 0.18));
 }
 
 .bento-glow-safe {
@@ -733,7 +720,7 @@
 }
 
 .glass-modal {
-  background: rgba(15, 23, 42, 0.92) !important;
+  background: rgba(15, 23, 42, 0.94) !important;
   backdrop-filter: blur(24px) !important;
   -webkit-backdrop-filter: blur(24px) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -741,84 +728,25 @@
 }
 
 /* ============================================================ */
-/* Design System: Neo-Brutalist (Bold, Playful Retro Aesthetic) */
+/* Design System: Minimalist Slate (OLED Clean & Crisp)         */
 /* ============================================================ */
-[data-ui-theme="neo-brutalist"] {
-  --brutal-border: #818cf8;
-  --brutal-shadow: #818cf8;
-  --brutal-bg: #0f172a;
+[data-ui-theme="minimalist"] {
+  --minimal-bg: #030712;
+  --minimal-card-bg: #090e1a;
+  --minimal-border: #1e293b;
 }
 
-[data-ui-theme="neo-brutalist"][data-theme="light"],
-[data-ui-theme="neo-brutalist"].light {
-  --brutal-border: #000000;
-  --brutal-shadow: #000000;
-  --brutal-bg: #ffffff;
+[data-ui-theme="minimalist"] body {
+  background-color: var(--minimal-bg) !important;
 }
 
-/* Retro background grid in Neo-Brutalist mode */
-[data-ui-theme="neo-brutalist"] body {
-  background-image: radial-gradient(rgba(129, 140, 248, 0.18) 1.5px, transparent 1.5px) !important;
-  background-size: 20px 20px !important;
-}
-
-[data-ui-theme="neo-brutalist"][data-theme="light"] body,
-[data-ui-theme="neo-brutalist"].light body {
-  background-image: radial-gradient(rgba(0, 0, 0, 0.12) 1.5px, transparent 1.5px) !important;
-  background-size: 20px 20px !important;
-}
-
-/* Transform all panels and cards to Neo-Brutalist thick borders & hard drop-shadows */
-[data-ui-theme="neo-brutalist"] .bg-slate-900,
-[data-ui-theme="neo-brutalist"] .bg-slate-900\/90,
-[data-ui-theme="neo-brutalist"] .bg-slate-900\/80,
-[data-ui-theme="neo-brutalist"] .bg-slate-950,
-[data-ui-theme="neo-brutalist"] .glass-panel,
-[data-ui-theme="neo-brutalist"] .bento-card {
-  background-color: var(--brutal-bg) !important;
-  border: 2.5px solid var(--brutal-border) !important;
-  box-shadow: 4px 4px 0px 0px var(--brutal-shadow) !important;
-  border-radius: 0.75rem !important;
+[data-ui-theme="minimalist"] .glass-panel,
+[data-ui-theme="minimalist"] .bento-card {
+  background-color: var(--minimal-card-bg) !important;
+  border-color: var(--minimal-border) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
 }
 
-/* Neo-Brutalist Buttons: Tactile physical press */
-[data-ui-theme="neo-brutalist"] button {
-  border: 2px solid var(--brutal-border) !important;
-  box-shadow: 3px 3px 0px 0px var(--brutal-shadow) !important;
-  border-radius: 0.5rem !important;
-  font-weight: 700 !important;
-  transition: transform 0.08s ease, box-shadow 0.08s ease !important;
-}
-
-[data-ui-theme="neo-brutalist"] button:hover {
-  transform: translate(-1px, -1px) !important;
-  box-shadow: 4px 4px 0px 0px var(--brutal-shadow) !important;
-}
-
-[data-ui-theme="neo-brutalist"] button:active {
-  transform: translate(2px, 2px) !important;
-  box-shadow: 1px 1px 0px 0px var(--brutal-shadow) !important;
-}
-
-/* Neo-Brutalist Calendar Day Cells */
-[data-ui-theme="neo-brutalist"] .grid-cols-7 > button {
-  border: 2px solid #475569 !important;
-  border-radius: 0.6rem !important;
-  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 0.4) !important;
-}
-
-[data-ui-theme="neo-brutalist"] .grid-cols-7 > button:hover {
-  border-color: #818cf8 !important;
-  box-shadow: 3px 3px 0px 0px #818cf8 !important;
-  transform: translate(-1px, -1px) !important;
-}
-
-/* Neo-Brutalist Badges & Pills */
-[data-ui-theme="neo-brutalist"] .rounded-full,
-[data-ui-theme="neo-brutalist"] .rounded-md {
-  border-width: 1.5px !important;
-  font-weight: 800 !important;
-}
 

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-export type UIThemeId = 'classic' | 'bento-glass' | 'neo-brutalist';
+export type UIThemeId = 'bento-glass' | 'classic' | 'minimalist';
 
 export interface UIThemeInfo {
   id: UIThemeId;
@@ -12,13 +12,6 @@ export interface UIThemeInfo {
 
 export const AVAILABLE_UI_THEMES: UIThemeInfo[] = [
   {
-    id: 'classic',
-    name: 'Classic Dark',
-    badge: 'Original',
-    description: 'Clean, dense, and familiar academic layout',
-    accentColor: '#6366f1',
-  },
-  {
     id: 'bento-glass',
     name: 'Bento Glass',
     badge: 'Modern SaaS',
@@ -26,11 +19,18 @@ export const AVAILABLE_UI_THEMES: UIThemeInfo[] = [
     accentColor: '#8b5cf6',
   },
   {
-    id: 'neo-brutalist',
-    name: 'Neo-Brutalist',
-    badge: 'Playful',
-    description: 'Bold high-contrast borders and pop-accent stickers',
-    accentColor: '#f59e0b',
+    id: 'classic',
+    name: 'Classic Dark',
+    badge: 'Original',
+    description: 'Clean, dense, and familiar academic layout',
+    accentColor: '#6366f1',
+  },
+  {
+    id: 'minimalist',
+    name: 'Minimalist Slate',
+    badge: 'Focus',
+    description: 'Clean OLED dark, crisp hairline borders, and pure readability',
+    accentColor: '#10b981',
   },
 ];
 
@@ -49,13 +49,16 @@ export function UIThemeProvider({ children }: { children: React.ReactNode }) {
   const [uiTheme, setUIThemeState] = useState<UIThemeId>(() => {
     try {
       const saved = localStorage.getItem(UI_THEME_STORAGE_KEY);
-      if (saved === 'classic' || saved === 'bento-glass' || saved === 'neo-brutalist') {
+      if (saved === 'neo-brutalist') {
+        return 'bento-glass'; // Automatically migrate away from legacy brutalist
+      }
+      if (saved === 'classic' || saved === 'bento-glass' || saved === 'minimalist') {
         return saved;
       }
     } catch {
       // Fallback if localStorage is inaccessible
     }
-    return 'classic';
+    return 'bento-glass';
   });
 
   useEffect(() => {

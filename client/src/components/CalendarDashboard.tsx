@@ -790,13 +790,21 @@ export const CalendarDashboard: React.FC<Props> = ({
               setEditingEvent(null);
               setIsEventModalOpen(true);
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/90 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-white text-xs font-semibold shadow-xs transition cursor-pointer ${
+              isBento
+                ? 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-md shadow-indigo-500/20'
+                : 'bg-indigo-600/90 hover:bg-indigo-500'
+            }`}
           >
             <Plus className="w-3.5 h-3.5" />
             Add Event
           </button>
 
-          <div className="flex items-center bg-slate-950 rounded-xl border border-slate-800 p-0.5">
+          <div className={`flex items-center rounded-xl border p-0.5 ${
+            isBento
+              ? 'bg-slate-900/60 border-slate-700/60 backdrop-blur-md'
+              : 'bg-slate-950 border-slate-800'
+          }`}>
             <button
               onClick={handlePrevMonth}
               title="Previous Month"
@@ -818,7 +826,11 @@ export const CalendarDashboard: React.FC<Props> = ({
 
           <button
             onClick={handleJumpToToday}
-            className="px-3 py-1.5 rounded-xl bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 text-indigo-300 text-xs font-semibold transition cursor-pointer"
+            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition cursor-pointer ${
+              isBento
+                ? 'bg-violet-950/60 hover:bg-violet-900/80 border-violet-700/50 text-violet-300 shadow-2xs'
+                : 'bg-indigo-950/80 hover:bg-indigo-900 border-indigo-700/60 text-indigo-300'
+            }`}
           >
             Today
           </button>
@@ -845,7 +857,11 @@ export const CalendarDashboard: React.FC<Props> = ({
               </div>
 
               {/* Month Quick Metric Pill */}
-              <div className="flex flex-wrap items-center gap-2 text-[11px] px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800">
+              <div className={`flex flex-wrap items-center gap-2 text-[11px] px-3 py-1 rounded-xl border ${
+                isBento
+                  ? 'bg-slate-950/80 border-slate-700/60 backdrop-blur-md shadow-2xs'
+                  : 'bg-slate-950 border-slate-800'
+              }`}>
                 <span className="text-slate-400">Classes:</span>
                 <span className="font-bold text-indigo-300">{monthStats.total}</span>
                 {monthStats.total > 0 && (
@@ -914,11 +930,15 @@ export const CalendarDashboard: React.FC<Props> = ({
                         : hasEvents
                         ? 'bg-violet-950/40 border-violet-700/70 hover:border-violet-500/90 hover:bg-violet-950/60 ring-1 ring-violet-500/30 shadow-xs'
                         : isToday
-                        ? 'bg-slate-900 border-indigo-600/70 shadow-xs'
+                        ? isBento
+                          ? 'bg-indigo-950/50 border-indigo-500/70 shadow-xs ring-1 ring-indigo-500/40'
+                          : 'bg-slate-900 border-indigo-600/70 shadow-xs'
                         : hasHoliday
                         ? 'bg-amber-950/20 border-amber-900/50 hover:bg-amber-950/40'
                         : cell.isCurrentMonth
-                        ? 'bg-slate-950/70 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900/60'
+                        ? isBento
+                          ? 'bg-slate-900/50 border-slate-800/60 hover:border-violet-500/50 hover:bg-slate-800/60 backdrop-blur-md'
+                          : 'bg-slate-950/70 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900/60'
                         : 'bg-slate-950/30 border-slate-900/50 opacity-40 hover:opacity-75'
                     }`}
                   >
