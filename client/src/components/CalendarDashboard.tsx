@@ -641,7 +641,7 @@ export const CalendarDashboard: React.FC<Props> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-5">
       {/* Claim Success Feedback Notification */}
       {claimSuccessMessage && (
         <div className="p-4 rounded-2xl bg-emerald-950/70 border border-emerald-800/80 flex items-center justify-between gap-3 text-xs text-emerald-200 animate-in fade-in">
@@ -724,7 +724,7 @@ export const CalendarDashboard: React.FC<Props> = ({
       )}
 
       {/* Top Filter Bar: Semester Switcher, Course Filter & Month Controls */}
-      <div className={`p-4 rounded-2xl border shadow-md flex flex-wrap items-center justify-between gap-4 ${
+      <div className={`p-3 sm:p-4 rounded-2xl border shadow-md flex flex-wrap items-center justify-between gap-3 sm:gap-4 ${
         isBento ? 'bento-card' : 'bg-slate-900/90 border-slate-800 backdrop-blur-md'
       }`}>
         {/* Left: Filters */}
@@ -838,7 +838,7 @@ export const CalendarDashboard: React.FC<Props> = ({
       </div>
 
       {/* Main Dashboard Layout: Calendar on Left, Day Details & Widgets on Right */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
         {/* Left Column (7 cols): Month Calendar Grid */}
         <div className="lg:col-span-7 space-y-4">
           <div className={`p-5 rounded-2xl border shadow-lg space-y-4 ${

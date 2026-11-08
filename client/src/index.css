@@ -464,6 +464,26 @@
 }
 
 /* Design System Utilities */
+/* Background Grid Pattern (Linear / Vercel Modern Dashboard Grid) */
+.bg-grid-pattern {
+  background-size: 36px 36px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+}
+
+[data-theme="light"] .bg-grid-pattern,
+.light .bg-grid-pattern {
+  background-image: 
+    linear-gradient(to right, rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+}
+
+.mask-radial-faded {
+  mask-image: radial-gradient(ellipse 90% 80% at 50% 20%, #000 50%, transparent 95%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 20%, #000 50%, transparent 95%);
+}
+
 .glass-panel {
   background: rgba(15, 23, 42, 0.75);
   backdrop-filter: blur(16px);

@@ -1,17 +1,10 @@
 import React from 'react';
 import { 
   GraduationCap, 
-  Calendar as CalendarIcon, 
-  FileText, 
-  Clock, 
-  Target, 
-  Database, 
-  CalendarCheck, 
-  BookOpen, 
   Sun, 
   Moon, 
   Sparkles,
-  Calculator,
+  Menu,
 } from 'lucide-react';
 import { UserProfileMenu } from './auth/UserProfileMenu.js';
 import { useTheme } from '../context/ThemeContext.js';
@@ -22,58 +15,34 @@ export type TabType = 'calendar' | 'notes' | 'routine' | 'analytics' | 'gpa' | '
 interface NavbarProps {
   activeTab: TabType;
   setActiveTab: (tab: TabType) => void;
+  onToggleMobileSidebar?: () => void;
 }
 
-const TABS = [
-  { id: 'calendar', label: 'Calendar', icon: CalendarIcon },
-  { id: 'notes', label: 'Study Notes', icon: FileText },
-  { id: 'routine', label: 'Weekly Routine', icon: Clock },
-  { id: 'analytics', label: 'Analytics', icon: Target },
-  { id: 'gpa', label: 'GPA Calculator', icon: Calculator },
-  { id: 'classes', label: 'Classes', icon: CalendarCheck },
-  { id: 'academic', label: 'Academic Setup', icon: BookOpen },
-  { id: 'backup', label: 'Backup & Data', icon: Database },
-] as const;
-
-export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
+export const Navbar: React.FC<NavbarProps> = ({ setActiveTab, onToggleMobileSidebar }) => {
   const { actualTheme, toggleTheme } = useTheme();
 
-  const handleTabClick = (tab: TabType) => {
-    setActiveTab(tab);
-  };
-
   return (
-    <header className="w-full glass-panel rounded-2xl sm:rounded-3xl p-3 sm:py-3.5 sm:px-6 mb-4 transition-all duration-200 relative z-50 print:hidden shadow-lg border border-slate-200/80 dark:border-white/10">
-      {/* Top Right Controls */}
-      <div className="flex sm:absolute sm:top-3.5 sm:right-5 justify-end items-center gap-1.5 sm:gap-2 mb-2 sm:mb-0 z-50">
-        {/* UI Design System Switcher */}
-        <ThemeStyleSwitcher />
+    <header className="w-full glass-panel rounded-2xl sm:rounded-3xl px-4 sm:px-6 py-2.5 sm:py-3 mb-5 transition-all duration-200 relative z-30 print:hidden shadow-lg border border-slate-200/80 dark:border-white/10 flex items-center justify-between gap-3">
+      {/* Left: Mobile Menu Toggle + App Branding */}
+      <div className="flex items-center gap-2.5 sm:gap-3">
+        {onToggleMobileSidebar && (
+          <button
+            type="button"
+            onClick={onToggleMobileSidebar}
+            className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 dark:bg-slate-900/80 dark:hover:bg-slate-800 dark:border-slate-800 dark:text-slate-300 md:hidden transition cursor-pointer"
+            aria-label="Toggle navigation menu"
+          >
+            <Menu className="w-4 h-4" />
+          </button>
+        )}
 
-        {/* Theme Toggle Button */}
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="p-1.5 rounded-lg sm:rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200 text-slate-700 dark:bg-slate-900/80 dark:hover:bg-slate-800/90 dark:border-slate-800 dark:text-slate-300 transition-colors cursor-pointer shadow-2xs"
-          title={actualTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          aria-label="Toggle color theme"
+        <div
+          className="flex items-center gap-2.5 cursor-pointer select-none group"
+          onClick={() => setActiveTab('calendar')}
         >
-          {actualTheme === 'dark' ? (
-            <Sun className="w-3.5 h-3.5 text-amber-400" />
-          ) : (
-            <Moon className="w-3.5 h-3.5 text-indigo-600" />
-          )}
-        </button>
-
-        {/* User Profile Dropdown */}
-        <UserProfileMenu />
-      </div>
-
-      {/* Top Middle: Compact Centered Logo, Title & Subtitle */}
-      <div className="flex flex-col items-center text-center justify-center mb-2.5 cursor-pointer select-none" onClick={() => handleTabClick('calendar')}>
-        <div className="flex items-center justify-center gap-2 mb-0.5">
-          <div className="relative group">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center text-white shadow-sm shadow-indigo-500/25 group-hover:scale-105 transition-transform duration-200">
-              <GraduationCap className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+          <div className="relative">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center text-white shadow-sm shadow-indigo-500/25 group-hover:scale-105 transition-transform duration-200">
+              <GraduationCap className="w-4.5 h-4.5" />
             </div>
             <div className="absolute -inset-0.5 bg-indigo-500/30 rounded-xl blur-xs -z-10 group-hover:bg-indigo-500/50 transition duration-200" />
           </div>
@@ -88,37 +57,28 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
             </span>
           </div>
         </div>
-
-        <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-md">
-          Organize classes, track attendance &bull; calculate GPAs &bull; study smarter
-        </p>
       </div>
 
-      {/* Nav Links: Compact and auto-adjusting in 1 or 2 rows */}
-      <nav 
-        aria-label="Main Navigation" 
-        className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl bg-slate-100/90 dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800/80 max-w-3xl mx-auto shadow-inner"
-      >
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              id={`tab-${tab.id}-btn`}
-              onClick={() => handleTabClick(tab.id as TabType)}
-              className={`inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer ${
-                isActive
-                  ? 'bg-indigo-600 text-white shadow-xs font-semibold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60'
-              }`}
-            >
-              <Icon className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${isActive ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </nav>
+      {/* Right: Controls & Profile */}
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <ThemeStyleSwitcher />
+
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200 text-slate-700 dark:bg-slate-900/80 dark:hover:bg-slate-800/90 dark:border-slate-800 dark:text-slate-300 transition-colors cursor-pointer shadow-2xs"
+          title={actualTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          aria-label="Toggle color theme"
+        >
+          {actualTheme === 'dark' ? (
+            <Sun className="w-3.5 h-3.5 text-amber-400" />
+          ) : (
+            <Moon className="w-3.5 h-3.5 text-indigo-600" />
+          )}
+        </button>
+
+        <UserProfileMenu />
+      </div>
     </header>
   );
 };

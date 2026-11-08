@@ -5,6 +5,7 @@ import { useUITheme } from './context/UIThemeContext.js';
 import { AuthScreen } from './components/auth/AuthScreen.js';
 import { LoadingScreen } from './components/auth/LoadingScreen.js';
 import { Navbar } from './components/Navbar.js';
+import { Sidebar } from './components/Sidebar.js';
 import type { TabType } from './components/Navbar.js';
 import { useKeepAlive } from './hooks/useKeepAlive.js';
 import { CalendarDashboard } from './components/CalendarDashboard.js';
@@ -32,6 +33,7 @@ function MainDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('calendar');
   const [selectedSemesterId, setSelectedSemesterId] = useState<string | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const handleSelectSemester = (id: string | null) => {
     setSelectedSemesterId(id);
@@ -41,34 +43,54 @@ function MainDashboard() {
   return (
     <div
       data-ui-theme={uiTheme}
-      className="min-h-screen flex flex-col items-center p-3 sm:p-6 md:p-8 selection:bg-indigo-500/30 selection:text-indigo-200 print:p-0 print:m-0 print:bg-white print:min-h-0 transition-colors duration-200"
+      className="min-h-screen flex flex-col items-center p-2.5 sm:p-4 md:p-5 selection:bg-indigo-500/30 selection:text-indigo-200 print:p-0 print:m-0 print:bg-white print:min-h-0 transition-colors duration-200"
     >
-      {/* Dynamic atmospheric background glow accents */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 print:hidden opacity-75">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[32rem] h-[32rem] bg-indigo-600/15 dark:bg-indigo-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '8s' }} />
+      {/* Dynamic atmospheric background grid & glow accents */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 print:hidden">
+        {/* Subtle Modern Tech Grid Pattern */}
+        <div className="absolute inset-0 bg-grid-pattern mask-radial-faded" />
+
+        {/* Ambient atmospheric glow spots */}
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[34rem] h-[34rem] bg-indigo-600/15 dark:bg-indigo-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '8s' }} />
         <div className="absolute -bottom-40 right-1/4 w-96 h-96 bg-violet-600/10 dark:bg-violet-600/15 rounded-full blur-3xl" />
         <div className="absolute top-1/3 left-10 w-72 h-72 bg-blue-600/10 dark:bg-blue-600/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="w-full max-w-5xl relative z-10 space-y-6 print:max-w-full print:space-y-0 print:m-0 print:p-0">
-        {/* Top Navbar with tabs & theme toggle */}
-        <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <div className="w-full max-w-[1580px] relative z-10 flex flex-col space-y-4 print:max-w-full print:space-y-0 print:m-0 print:p-0">
+        {/* Holy Grail Top Header (Sleek single row) */}
+        <Navbar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+        />
 
-        {/* Tab 1: Main Academic Calendar & Dashboard */}
-        {activeTab === 'calendar' && (
-          <main className="space-y-6 relative z-10">
-            <CalendarDashboard
-              selectedSemesterId={selectedSemesterId}
-              onSelectSemester={handleSelectSemester}
-              onNavigateToSetup={() => setActiveTab('academic')}
-              onNavigateToGenerator={() => setActiveTab('classes')}
-            />
-          </main>
-        )}
+        {/* Holy Grail Body: Left Sidebar + Center/Right Workspace */}
+        <div className="flex-1 w-full flex flex-col md:flex-row gap-5 items-start">
+          {/* Left Navigation Sidebar */}
+          <Sidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            isMobileOpen={isMobileSidebarOpen}
+            setIsMobileOpen={setIsMobileSidebarOpen}
+          />
+
+          {/* Center Main Content Area */}
+          <div className="flex-1 min-w-0 w-full space-y-5">
+            {/* Tab 1: Main Academic Calendar & Dashboard */}
+            {activeTab === 'calendar' && (
+              <main className="space-y-5">
+                <CalendarDashboard
+                  selectedSemesterId={selectedSemesterId}
+                  onSelectSemester={handleSelectSemester}
+                  onNavigateToSetup={() => setActiveTab('academic')}
+                  onNavigateToGenerator={() => setActiveTab('classes')}
+                />
+              </main>
+            )}
 
         {/* Tab 2: Study Notes & Chronological Lecture Timeline (Phase 5) */}
         {activeTab === 'notes' && (
-          <main className="space-y-6 relative z-10">
+          <main className="space-y-6">
             <CourseNotesTimeline
               selectedSemesterId={selectedSemesterId}
               onSelectSemester={handleSelectSemester}
@@ -80,7 +102,7 @@ function MainDashboard() {
 
         {/* Tab 3: Weekly Routine Generator, Print & PDF Export (Phase 9) */}
         {activeTab === 'routine' && (
-          <main className="space-y-6 relative z-10">
+          <main className="space-y-6">
             <WeeklyRoutine
               selectedSemesterId={selectedSemesterId}
               onSelectSemester={handleSelectSemester}
@@ -91,7 +113,7 @@ function MainDashboard() {
 
         {/* Tab 4: Attendance Analytics, Targets & Bunk/Recovery Forecast (Phase 7) */}
         {activeTab === 'analytics' && (
-          <main className="space-y-6 relative z-10">
+          <main className="space-y-6">
             <AttendanceAnalytics
               selectedSemesterId={selectedSemesterId}
               onSelectSemester={handleSelectSemester}
@@ -104,7 +126,7 @@ function MainDashboard() {
 
         {/* Tab: GPA & CGPA Calculator */}
         {activeTab === 'gpa' && (
-          <main className="space-y-6 relative z-10">
+          <main className="space-y-6">
             <GpaCalculator
               selectedSemesterId={selectedSemesterId}
               onSelectSemester={handleSelectSemester}
@@ -115,7 +137,7 @@ function MainDashboard() {
 
         {/* Tab 4: Backup, Restore, CSV Exports & Reports (Phase 8) */}
         {activeTab === 'backup' && (
-          <main className="space-y-6 relative z-10">
+          <main className="space-y-6">
             <BackupData
               selectedSemesterId={selectedSemesterId}
               onSelectSemester={handleSelectSemester}
@@ -125,7 +147,7 @@ function MainDashboard() {
 
         {/* Tab 5: Class Instances & Attendance Tracking */}
         {activeTab === 'classes' && (
-          <main className="space-y-6 relative z-10">
+          <main className="space-y-6">
             <ClassInstanceManager
               selectedSemesterId={selectedSemesterId}
               onSelectSemester={handleSelectSemester}
@@ -135,7 +157,7 @@ function MainDashboard() {
 
         {/* Tab 4: Academic Setup (Semesters, Courses, Schedules) */}
         {activeTab === 'academic' && (
-          <main className="space-y-6 relative z-10">
+          <main className="space-y-6">
             {/* Section 1: Semesters */}
             <section className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
               <SemesterManager
@@ -159,6 +181,8 @@ function MainDashboard() {
             </section>
           </main>
         )}
+          </div>
+        </div>
 
         {/* Footer */}
         <footer className="border-t border-slate-200/90 dark:border-slate-800/80 pt-4 pb-2 text-center text-xs text-slate-500 dark:text-slate-400 print:hidden space-y-1">

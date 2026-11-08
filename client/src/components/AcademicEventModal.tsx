@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { academicEventApi } from '../api/academicApi.js';
 import type { IAcademicEvent, AcademicEventType, ICourse } from '../types/academic.js';
@@ -192,9 +193,17 @@ export const AcademicEventModal: React.FC<Props> = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 md:p-4 overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 md:p-4 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg max-h-[88vh] flex flex-col shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Modal Header */}
         <div className="p-5 border-b border-slate-800 flex items-start justify-between shrink-0 bg-slate-900">
           <div className="space-y-0.5">
@@ -216,7 +225,11 @@ export const AcademicEventModal: React.FC<Props> = ({
         </div>
 
         {/* Modal Form Body */}
-        <form id="event-form" onSubmit={handleSubmit} className="overflow-y-auto p-5 space-y-4 flex-1 text-xs">
+        <form
+          id="event-form"
+          onSubmit={handleSubmit}
+          className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4 text-xs overscroll-contain"
+        >
           {formError && (
             <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-300 text-xs">
               {formError}
@@ -478,6 +491,7 @@ export const AcademicEventModal: React.FC<Props> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
