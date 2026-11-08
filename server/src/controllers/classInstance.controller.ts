@@ -432,7 +432,8 @@ export const getClassInstances = async (req: Request, res: Response): Promise<vo
     let query = ClassInstance.find(filter)
       .populate('courseId', 'courseCode courseName color instructor')
       .populate('semesterId', 'name year term isActive')
-      .sort({ date: 1, startTime: 1 });
+      .sort({ date: 1, startTime: 1 })
+      .lean();
 
     if (limit) {
       const parsedLimit = parseInt(String(limit), 10);
@@ -465,7 +466,8 @@ export const getClassInstanceById = async (req: Request, res: Response): Promise
 
     const instance = await ClassInstance.findOne(buildUserFilter(req.userId, { _id: id }))
       .populate('courseId', 'courseCode courseName color instructor credit')
-      .populate('semesterId', 'name year term isActive');
+      .populate('semesterId', 'name year term isActive')
+      .lean();
 
     if (!instance) {
       res.status(404).json({ success: false, message: 'Class instance not found' });

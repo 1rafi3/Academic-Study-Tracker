@@ -54,12 +54,14 @@ export const CourseNotesTimeline: React.FC<Props> = ({
     }
   }, [selectedSemesterId, activeSemester, onSelectSemester]);
 
-  // Fetch Courses for active semester
+  const effectiveSemesterId = selectedSemesterId || activeSemester?._id;
+
+  // Fetch Courses for active semester (shares cache instantly across tabs)
   const { data: courses = [], isLoading: coursesLoading } = useQuery<ICourse[]>({
-    queryKey: ['courses', activeSemester?._id],
+    queryKey: ['courses', effectiveSemesterId],
     queryFn: () =>
-      activeSemester ? courseApi.getAll(activeSemester._id) : Promise.resolve([]),
-    enabled: Boolean(activeSemester?._id),
+      effectiveSemesterId ? courseApi.getAll(effectiveSemesterId) : Promise.resolve([]),
+    enabled: Boolean(effectiveSemesterId),
   });
 
   // Auto-select first course if none selected

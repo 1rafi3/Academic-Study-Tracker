@@ -19,11 +19,16 @@ import { ScheduleManager } from './components/ScheduleManager.js';
 import { ClassInstanceManager } from './components/ClassInstanceManager.js';
 import { GpaCalculator } from './components/GpaCalculator.js';
 
+const LAST_ACTIVE_SEMESTER_KEY = 'academic_tracker_active_semester_id';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
       retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes: instant 0ms tab switching from cache!
+      gcTime: 30 * 60 * 1000, // 30 minutes in-memory cache lifecycle
+      refetchOnReconnect: true,
     },
   },
 });
@@ -31,13 +36,28 @@ const queryClient = new QueryClient({
 function MainDashboard() {
   const { uiTheme } = useUITheme();
   const [activeTab, setActiveTab] = useState<TabType>('calendar');
-  const [selectedSemesterId, setSelectedSemesterId] = useState<string | null>(null);
+  const [selectedSemesterId, setSelectedSemesterId] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(LAST_ACTIVE_SEMESTER_KEY);
+    } catch {
+      return null;
+    }
+  });
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const handleSelectSemester = (id: string | null) => {
     setSelectedSemesterId(id);
     setSelectedCourseId(null);
+    try {
+      if (id) {
+        localStorage.setItem(LAST_ACTIVE_SEMESTER_KEY, id);
+      } else {
+        localStorage.removeItem(LAST_ACTIVE_SEMESTER_KEY);
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
   };
 
   return (

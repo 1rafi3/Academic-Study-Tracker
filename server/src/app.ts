@@ -10,6 +10,7 @@ dotenv.config();
 
 import express, { Express } from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import healthRoutes from './routes/health.routes.js';
 import semesterRoutes from './routes/semester.routes.js';
 import courseRoutes from './routes/course.routes.js';
@@ -22,6 +23,9 @@ import authRoutes from './routes/auth.routes.js';
 import { requireAuth } from './middleware/auth.middleware.js';
 
 const app: Express = express();
+
+// High-performance gzip/deflate compression for all JSON and API responses
+app.use(compression());
 
 // Middleware
 const clientUrls = process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',').map((u) => u.trim()) : [];

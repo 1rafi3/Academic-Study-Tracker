@@ -50,9 +50,9 @@ export const ClassInstanceManager: React.FC<Props> = ({
     queryFn: () => semesterApi.getAll(),
   });
 
-  // Active or selected semester
+  // Active or selected semester (fires immediately with cached semester ID)
   const activeSemester = semesters.find((s) => s._id === selectedSemesterId) || semesters[0] || null;
-  const currentSemesterId = activeSemester?._id || null;
+  const currentSemesterId = selectedSemesterId || activeSemester?._id || null;
 
   // Fetch Courses in current semester
   const { data: courses = [] } = useQuery<ICourse[]>({

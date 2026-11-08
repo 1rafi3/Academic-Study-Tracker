@@ -79,7 +79,7 @@ export const getSemesters = async (req: Request, res: Response): Promise<void> =
     }
 
     const filter = buildUserFilter(req.userId, baseFilter);
-    const semesters = await Semester.find(filter).sort({ year: -1, startDate: -1 });
+    const semesters = await Semester.find(filter).sort({ year: -1, startDate: -1 }).lean();
 
     res.status(200).json({
       success: true,
@@ -104,7 +104,7 @@ export const getSemesterById = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    const semester = await Semester.findOne(buildUserFilter(req.userId, { _id: id }));
+    const semester = await Semester.findOne(buildUserFilter(req.userId, { _id: id })).lean();
 
     if (!semester) {
       res.status(404).json({

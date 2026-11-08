@@ -97,12 +97,14 @@ export const WeeklyRoutine: React.FC<Props> = ({
     }
   }, [selectedSemesterId, activeSemester, onSelectSemester]);
 
-  // 2. Fetch Courses for active semester
+  const effectiveSemesterId = selectedSemesterId || activeSemester?._id;
+
+  // 2. Fetch Courses for active semester (shares cache with other tabs)
   const { data: courses = [], isLoading: coursesLoading } = useQuery<ICourse[]>({
-    queryKey: ['courses', activeSemester?._id],
+    queryKey: ['courses', effectiveSemesterId],
     queryFn: () =>
-      activeSemester ? courseApi.getAll(activeSemester._id) : Promise.resolve([]),
-    enabled: Boolean(activeSemester?._id),
+      effectiveSemesterId ? courseApi.getAll(effectiveSemesterId) : Promise.resolve([]),
+    enabled: Boolean(effectiveSemesterId),
   });
 
   const syncMutation = useMutation({

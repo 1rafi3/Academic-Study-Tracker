@@ -174,12 +174,15 @@ export const CalendarDashboard: React.FC<Props> = ({
     }
   }, [activeSemester?._id, activeSemester?.startDate, activeSemester?.endDate]);
 
+  // Effective semester ID for parallel fetching (doesn't wait for semesters query)
+  const effectiveSemesterId = selectedSemesterId || activeSemester?._id;
+
   // Fetch Courses for filter dropdown
   const { data: courses = [] } = useQuery<ICourse[]>({
-    queryKey: ['courses', activeSemester?._id],
+    queryKey: ['courses', effectiveSemesterId],
     queryFn: () =>
-      activeSemester ? courseApi.getAll(activeSemester._id) : Promise.resolve([]),
-    enabled: Boolean(activeSemester?._id),
+      effectiveSemesterId ? courseApi.getAll(effectiveSemesterId) : Promise.resolve([]),
+    enabled: Boolean(effectiveSemesterId),
   });
 
   // Calculate start and end date for current view month
@@ -192,47 +195,58 @@ export const CalendarDashboard: React.FC<Props> = ({
     return toDateString(viewYear, viewMonth, daysInMonth);
   }, [viewYear, viewMonth]);
 
-  // 1. Fetch Class Instances for visible month
+  // 1. Fetch Class Instances for visible month (fires in parallel immediately)
   const {
     data: monthClasses = [],
   } = useQuery<IClassInstance[]>({
     queryKey: [
       'class-instances',
-      activeSemester?._id,
+      effectiveSemesterId,
       selectedCourseId,
       monthStartDate,
       monthEndDate,
     ],
     queryFn: () => {
-      if (!activeSemester?._id) return Promise.resolve([]);
+      if (!effectiveSemesterId) return Promise.resolve([]);
       return classInstanceApi.getAll({
-        semesterId: activeSemester._id,
+        semesterId: effectiveSemesterId,
         courseId: selectedCourseId !== 'all' ? selectedCourseId : undefined,
         startDate: monthStartDate,
         endDate: monthEndDate,
       });
     },
-    enabled: Boolean(activeSemester?._id),
+    enabled: Boolean(effectiveSemesterId),
   });
 
-  // 2. Fetch Bangladesh Public Holidays for visible month
-  const { data: monthHolidays = [] } = useQuery<IBangladeshHoliday[]>({
-    queryKey: ['holidays', viewYear, viewMonth],
-    queryFn: () => holidayApi.getHolidays(viewYear, viewMonth),
+  // 2. Optimized Holiday fetching: Fetch once per year (caches all 12 months in one tiny ~2KB request!)
+  const { data: allYearHolidays = [] } = useQuery<IBangladeshHoliday[]>({
+    queryKey: ['holidays', 'year', viewYear],
+    queryFn: () => holidayApi.getHolidays(viewYear),
   });
 
-  // 3. Fetch Academic Events for visible month
+  // Derive visible month's holidays locally without extra network calls
+  const monthHolidays = useMemo(() => {
+    return allYearHolidays.filter((h) => {
+      const parts = (h.dateString || '').split('-');
+      if (parts.length >= 2) {
+        return parseInt(parts[1], 10) - 1 === viewMonth;
+      }
+      return false;
+    });
+  }, [allYearHolidays, viewMonth]);
+
+  // 3. Fetch Academic Events for visible month (fires in parallel immediately)
   const { data: monthEvents = [] } = useQuery<IAcademicEvent[]>({
-    queryKey: ['academic-events', activeSemester?._id, monthStartDate, monthEndDate],
+    queryKey: ['academic-events', effectiveSemesterId, monthStartDate, monthEndDate],
     queryFn: () => {
-      if (!activeSemester?._id) return Promise.resolve([]);
+      if (!effectiveSemesterId) return Promise.resolve([]);
       return academicEventApi.getAll({
-        semesterId: activeSemester._id,
+        semesterId: effectiveSemesterId,
         startDate: monthStartDate,
         endDate: monthEndDate,
       });
     },
-    enabled: Boolean(activeSemester?._id),
+    enabled: Boolean(effectiveSemesterId),
   });
 
   // 14-day window for Upcoming Events
@@ -244,23 +258,16 @@ export const CalendarDashboard: React.FC<Props> = ({
 
   // Fetch upcoming Academic Events (Class Tests, Quizzes, Assignments, Exams)
   const { data: upcomingAcademicEvents = [] } = useQuery<IAcademicEvent[]>({
-    queryKey: ['academic-events', 'upcoming', activeSemester?._id, todayString, twoWeeksLaterString],
+    queryKey: ['academic-events', 'upcoming', effectiveSemesterId, todayString, twoWeeksLaterString],
     queryFn: () => {
-      if (!activeSemester?._id) return Promise.resolve([]);
+      if (!effectiveSemesterId) return Promise.resolve([]);
       return academicEventApi.getAll({
-        semesterId: activeSemester._id,
+        semesterId: effectiveSemesterId,
         startDate: todayString,
         endDate: twoWeeksLaterString,
       });
     },
-    enabled: Boolean(activeSemester?._id),
-  });
-
-  // Fetch full year Bangladesh public holidays to support the upcoming window
-  const currentYear = todayDate.getFullYear();
-  const { data: allYearHolidays = [] } = useQuery<IBangladeshHoliday[]>({
-    queryKey: ['holidays', 'all-year', currentYear],
-    queryFn: () => holidayApi.getHolidays(currentYear),
+    enabled: Boolean(effectiveSemesterId),
   });
 
   // Unified list of upcoming events and holidays sorted chronologically

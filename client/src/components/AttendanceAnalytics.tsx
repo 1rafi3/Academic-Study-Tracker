@@ -72,15 +72,17 @@ export const AttendanceAnalytics: React.FC<Props> = ({
     }
   }, [selectedSemesterId, activeSemester, onSelectSemester]);
 
-  // 2. Fetch Courses for filter
+  const effectiveSemesterId = selectedSemesterId || activeSemester?._id;
+
+  // 2. Fetch Courses for filter (fires in parallel immediately)
   const { data: courses = [] } = useQuery<ICourse[]>({
-    queryKey: ['courses', activeSemester?._id],
+    queryKey: ['courses', effectiveSemesterId],
     queryFn: () =>
-      activeSemester ? courseApi.getAll(activeSemester._id) : Promise.resolve([]),
-    enabled: Boolean(activeSemester?._id),
+      effectiveSemesterId ? courseApi.getAll(effectiveSemesterId) : Promise.resolve([]),
+    enabled: Boolean(effectiveSemesterId),
   });
 
-  // 3. Fetch Analytics from API
+  // 3. Fetch Analytics from API (fires in parallel immediately)
   const {
     data: analyticsData,
     isLoading: analyticsLoading,
@@ -88,17 +90,17 @@ export const AttendanceAnalytics: React.FC<Props> = ({
   } = useQuery<AttendanceAnalyticsResponse>({
     queryKey: [
       'attendance-analytics',
-      activeSemester?._id,
+      effectiveSemesterId,
       selectedCourseId,
       targetPercentage,
     ],
     queryFn: () =>
       analyticsApi.getAttendance({
-        semesterId: activeSemester?._id,
+        semesterId: effectiveSemesterId,
         courseId: selectedCourseId !== 'all' ? selectedCourseId : undefined,
         target: targetPercentage,
       }),
-    enabled: Boolean(activeSemester?._id),
+    enabled: Boolean(effectiveSemesterId),
   });
 
   const overall = analyticsData?.overall;

@@ -128,7 +128,8 @@ export const getCourses = async (req: Request, res: Response): Promise<void> => 
     const filter = buildUserFilter(req.userId, baseFilter);
     const courses = await Course.find(filter)
       .populate('semesterId', 'name year term isActive')
-      .sort({ courseCode: 1 });
+      .sort({ courseCode: 1 })
+      .lean();
 
     res.status(200).json({
       success: true,
@@ -153,7 +154,9 @@ export const getCourseById = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    const course = await Course.findOne(buildUserFilter(req.userId, { _id: id })).populate('semesterId', 'name year term isActive');
+    const course = await Course.findOne(buildUserFilter(req.userId, { _id: id }))
+      .populate('semesterId', 'name year term isActive')
+      .lean();
 
     if (!course) {
       res.status(404).json({

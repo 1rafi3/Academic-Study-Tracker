@@ -80,7 +80,8 @@ export const getAcademicEvents = async (req: Request, res: Response): Promise<vo
     const events = await AcademicEvent.find(filter)
       .populate('courseId', 'courseCode courseName color instructor')
       .populate('semesterId', 'name year term isActive')
-      .sort({ date: 1, startTime: 1 });
+      .sort({ date: 1, startTime: 1 })
+      .lean();
 
     res.status(200).json({
       success: true,
@@ -104,7 +105,8 @@ export const getAcademicEventById = async (req: Request, res: Response): Promise
 
     const event = await AcademicEvent.findOne(buildUserFilter(req.userId, { _id: id }))
       .populate('courseId', 'courseCode courseName color instructor')
-      .populate('semesterId', 'name year term isActive');
+      .populate('semesterId', 'name year term isActive')
+      .lean();
 
     if (!event) {
       res.status(404).json({ success: false, message: 'Academic event not found' });
