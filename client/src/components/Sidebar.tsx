@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Calendar as CalendarIcon,
   FileText,
@@ -10,8 +10,18 @@ import {
   Database,
   X,
   Compass,
+  Sparkles,
+  Sun,
+  CloudRain,
+  CloudSun,
+  Wheat,
+  Snowflake,
+  Flower2,
 } from 'lucide-react';
 import type { TabType } from './Navbar.js';
+import { useSeasonal } from '../context/SeasonalContext.js';
+import { SeasonalSettingsModal } from './seasonal/SeasonalSettingsModal.js';
+import type { SeasonId } from '../utils/seasonalEngine.js';
 
 interface SidebarProps {
   activeTab: TabType;
@@ -37,9 +47,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isMobileOpen,
   setIsMobileOpen,
 }) => {
+  const { activeSeason } = useSeasonal();
+  const [isSeasonalModalOpen, setIsSeasonalModalOpen] = useState(false);
+
   const handleTabClick = (tabId: TabType) => {
     setActiveTab(tabId);
     setIsMobileOpen(false);
+  };
+
+  const getSeasonIcon = (id: SeasonId) => {
+    switch (id) {
+      case 'grishma':
+        return <Sun className="w-3.5 h-3.5 text-amber-500" />;
+      case 'barsha':
+        return <CloudRain className="w-3.5 h-3.5 text-emerald-500" />;
+      case 'sharat':
+        return <CloudSun className="w-3.5 h-3.5 text-sky-400" />;
+      case 'hemanta':
+        return <Wheat className="w-3.5 h-3.5 text-amber-500" />;
+      case 'sheet':
+        return <Snowflake className="w-3.5 h-3.5 text-cyan-300 dark:text-cyan-200" />;
+      case 'basanta':
+        return <Flower2 className="w-3.5 h-3.5 text-rose-500" />;
+      default:
+        return <Sparkles className="w-3.5 h-3.5 text-indigo-400" />;
+    }
   };
 
   const navContent = (
@@ -96,17 +128,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
       </div>
 
-      {/* Sidebar Footer Info */}
-      <div className="pt-4 mt-6 border-t border-slate-200/60 dark:border-slate-800/60 px-2 space-y-1 text-[11px] text-slate-500 dark:text-slate-400">
-        <div className="flex items-center justify-between">
+      {/* Sidebar Seasonal Atmosphere Info */}
+      <div className="pt-3 mt-4 border-t border-slate-200/60 dark:border-slate-800/60 px-1 space-y-2">
+        <button
+          type="button"
+          onClick={() => setIsSeasonalModalOpen(true)}
+          className="w-full flex items-center justify-between p-2 rounded-xl bg-slate-100/70 hover:bg-slate-200/70 dark:bg-slate-800/50 dark:hover:bg-slate-800/80 border border-slate-200/70 dark:border-slate-800 transition cursor-pointer text-left group"
+          title="Bangladesh Season Settings (ষড়ঋতু)"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xs group-hover:scale-110 transition-transform">
+              {getSeasonIcon(activeSeason.id)}
+            </span>
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate">
+                {activeSeason.nameBangla} ({activeSeason.nameEnglish})
+              </p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                {activeSeason.gregorianMonths}
+              </p>
+            </div>
+          </div>
+          <Sparkles className="w-3 h-3 text-indigo-500 shrink-0 opacity-70 group-hover:opacity-100" />
+        </button>
+
+        <div className="flex items-center justify-between px-1 text-[11px] text-slate-500 dark:text-slate-400">
           <span className="font-semibold text-slate-700 dark:text-slate-300">Holy Grail Hub</span>
           <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-200/70 dark:bg-slate-800 font-mono">
             v2.0
           </span>
         </div>
-        <p className="text-[10px] text-slate-400 dark:text-slate-500">
-          Academic Companion
-        </p>
       </div>
     </div>
   );
@@ -147,6 +198,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <div className="flex-1 overflow-y-auto">{navContent}</div>
       </aside>
+
+      <SeasonalSettingsModal
+        isOpen={isSeasonalModalOpen}
+        onClose={() => setIsSeasonalModalOpen(false)}
+      />
     </>
   );
 };

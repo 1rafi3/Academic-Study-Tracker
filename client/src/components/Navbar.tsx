@@ -9,6 +9,7 @@ import {
 import { UserProfileMenu } from './auth/UserProfileMenu.js';
 import { useTheme } from '../context/ThemeContext.js';
 import { ThemeStyleSwitcher } from './ThemeStyleSwitcher.js';
+import { SeasonalControlBadge } from './seasonal/SeasonalControlBadge.js';
 
 export type TabType = 'calendar' | 'notes' | 'routine' | 'analytics' | 'gpa' | 'backup' | 'classes' | 'academic';
 
@@ -61,6 +62,7 @@ export const Navbar: React.FC<NavbarProps> = ({ setActiveTab, onToggleMobileSide
 
       {/* Right: Controls & Profile */}
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <SeasonalControlBadge />
         <ThemeStyleSwitcher />
 
         <button

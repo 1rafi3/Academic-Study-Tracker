@@ -18,6 +18,7 @@ import { CourseManager } from './components/CourseManager.js';
 import { ScheduleManager } from './components/ScheduleManager.js';
 import { ClassInstanceManager } from './components/ClassInstanceManager.js';
 import { GpaCalculator } from './components/GpaCalculator.js';
+import { SeasonalBackground } from './components/seasonal/SeasonalBackground.js';
 
 const LAST_ACTIVE_SEMESTER_KEY = 'academic_tracker_active_semester_id';
 
@@ -66,6 +67,7 @@ function MainDashboard() {
       className="min-h-screen flex flex-col items-center p-2.5 sm:p-4 md:p-5 selection:bg-indigo-500/30 selection:text-indigo-200 print:p-0 print:m-0 print:bg-white print:min-h-0 transition-colors duration-200"
     >
       {/* Dynamic atmospheric background grid & glow accents */}
+      <SeasonalBackground />
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 print:hidden">
         {/* Subtle Modern Tech Grid Pattern */}
         <div className="absolute inset-0 bg-grid-pattern mask-radial-faded" />
