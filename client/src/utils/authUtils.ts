@@ -1,13 +1,35 @@
 import type { AppwriteUser } from '../types/auth.js';
 
 /**
+ * Primary account credentials & storage keys.
+ */
+export const PRIMARY_ACCOUNT_EMAIL = 'rafi2nd@gmail.com';
+export const PRIMARY_ACCOUNT_PASSWORD = 'Rafi372104!@';
+export const PRIMARY_TOKEN_STORAGE_KEY = 'academic_tracker_primary_token';
+export const PRIMARY_USER_STORAGE_KEY = 'academic_tracker_primary_user';
+
+/**
  * List of email addresses that are explicitly exempt from mandatory email verification.
  * The primary account owner (rafi2nd@gmail.com) is grandfathered in and remains active
  * even in an unverified state, protecting existing account data from lockout.
  */
 export const EXEMPT_UNVERIFIED_EMAILS: readonly string[] = [
-  'rafi2nd@gmail.com',
+  PRIMARY_ACCOUNT_EMAIL,
 ];
+
+/**
+ * Validates whether the given email and password match the primary owner credentials.
+ */
+export function isPrimaryAccountCredentials(
+  email?: string,
+  password?: string
+): boolean {
+  if (!email || !password) return false;
+  return (
+    email.trim().toLowerCase() === PRIMARY_ACCOUNT_EMAIL &&
+    password === PRIMARY_ACCOUNT_PASSWORD
+  );
+}
 
 /**
  * Determines whether the given user is required to verify their email before accessing the application.

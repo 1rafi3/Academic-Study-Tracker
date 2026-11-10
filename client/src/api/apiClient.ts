@@ -1,5 +1,9 @@
 import { createJWT } from '../services/appwrite.js';
 import type { ApiResponse } from '../types/academic.js';
+import {
+  PRIMARY_TOKEN_STORAGE_KEY,
+  PRIMARY_USER_STORAGE_KEY,
+} from '../utils/authUtils.js';
 
 // Base API URL: Supports VITE_API_URL for production deployments (e.g. Vercel + Render),
 // falling back to local Vite proxy '/api' when not configured.
@@ -21,10 +25,18 @@ export const setAuthFailureHandler = (handler: AuthFailureHandler | null) => {
 };
 
 /**
- * Retrieves a valid Appwrite JWT for authenticating requests to the Express backend.
+ * Retrieves a valid authentication token for requests to the Express backend.
+ * Checks for primary account session first, otherwise retrieves Appwrite JWT.
  * Uses an in-memory cache to minimize Appwrite API calls, refreshing when close to expiry.
  */
 export const getOrRefreshJWT = async (): Promise<string | null> => {
+  // 1. Check for primary account token
+  const primaryToken = localStorage.getItem(PRIMARY_TOKEN_STORAGE_KEY);
+  if (primaryToken) {
+    return primaryToken;
+  }
+
+  // 2. Standard Appwrite JWT caching
   const now = Date.now();
   // If we have a cached JWT with at least 60 seconds of validity remaining, reuse it
   if (cachedJWT && tokenExpiresAt - now > 60 * 1000) {
@@ -50,11 +62,13 @@ export const getOrRefreshJWT = async (): Promise<string | null> => {
 };
 
 /**
- * Clears the in-memory token cache (used on logout or session expiration).
+ * Clears the in-memory token cache and primary tokens (used on logout or session expiration).
  */
 export const clearCachedToken = () => {
   cachedJWT = null;
   tokenExpiresAt = 0;
+  localStorage.removeItem(PRIMARY_TOKEN_STORAGE_KEY);
+  localStorage.removeItem(PRIMARY_USER_STORAGE_KEY);
 };
 
 /**

@@ -1,6 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { Client, Account, AppwriteException } from 'node-appwrite';
 import type { AuthenticatedRequest, AuthenticatedUser } from '../types/auth.types.js';
+import { verifyPrimaryToken } from '../utils/primaryAuth.js';
 
 export interface AppwriteVerifier {
   verifyToken(jwt: string): Promise<AuthenticatedUser>;
@@ -125,10 +126,32 @@ export const requireAuth = async (
       return;
     }
 
-    // 4. Verify the JWT token with Appwrite
+    // 4. Check for Primary Account Session Token
+    if (jwt.startsWith('at_primary.')) {
+      const payload = verifyPrimaryToken(jwt);
+      if (!payload) {
+        res.status(401).json({
+          success: false,
+          message: 'Invalid or expired primary authentication session. Please log in again.',
+        });
+        return;
+      }
+
+      req.userId = payload.userId;
+      req.user = {
+        userId: payload.userId,
+        email: payload.email,
+        name: payload.name,
+      };
+
+      next();
+      return;
+    }
+
+    // 5. Verify the standard JWT token with Appwrite Cloud
     const authenticatedUser = await currentVerifier.verifyToken(jwt);
 
-    // 5. Attach user ID and details to Express request
+    // 6. Attach user ID and details to Express request
     req.userId = authenticatedUser.userId;
     req.user = authenticatedUser;
 

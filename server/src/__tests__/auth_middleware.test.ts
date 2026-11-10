@@ -10,6 +10,12 @@ import {
   DefaultAppwriteVerifier,
 } from '../middleware/auth.middleware.js';
 import type { AuthenticatedRequest } from '../types/auth.types.js';
+import {
+  createPrimaryToken,
+  PRIMARY_ACCOUNT_USER_ID,
+  PRIMARY_ACCOUNT_EMAIL,
+  PRIMARY_ACCOUNT_NAME,
+} from '../utils/primaryAuth.js';
 
 describe('=== Backend Authentication Middleware Unit Tests ===', () => {
   let app: Express;
@@ -110,5 +116,45 @@ describe('=== Backend Authentication Middleware Unit Tests ===', () => {
     expect(res.status).toBe(500);
     expect(res.body.success).toBe(false);
     expect(res.body.message).toContain('Server authentication configuration error');
+  });
+
+  describe('Primary Account Token Authentication', () => {
+    it('authenticates valid primary token and attaches primary user identity', async () => {
+      const primaryToken = createPrimaryToken({
+        userId: PRIMARY_ACCOUNT_USER_ID,
+        email: PRIMARY_ACCOUNT_EMAIL,
+        name: PRIMARY_ACCOUNT_NAME,
+      });
+
+      const res = await request(app)
+        .get('/test/protected')
+        .set('Authorization', `Bearer ${primaryToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.userId).toBe(PRIMARY_ACCOUNT_USER_ID);
+      expect(res.body.user).toEqual({
+        userId: PRIMARY_ACCOUNT_USER_ID,
+        email: PRIMARY_ACCOUNT_EMAIL,
+        name: PRIMARY_ACCOUNT_NAME,
+      });
+    });
+
+    it('rejects tampered primary token with 401', async () => {
+      const primaryToken = createPrimaryToken({
+        userId: PRIMARY_ACCOUNT_USER_ID,
+        email: PRIMARY_ACCOUNT_EMAIL,
+        name: PRIMARY_ACCOUNT_NAME,
+      });
+      const tamperedToken = `${primaryToken}invalid_signature`;
+
+      const res = await request(app)
+        .get('/test/protected')
+        .set('Authorization', `Bearer ${tamperedToken}`);
+
+      expect(res.status).toBe(401);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain('Invalid or expired primary authentication session');
+    });
   });
 });

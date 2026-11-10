@@ -1,8 +1,25 @@
 import { Router } from 'express';
-import { claimLegacyData, getLegacyStatus } from '../controllers/auth.controller.js';
+import {
+  claimLegacyData,
+  getLegacyStatus,
+  primaryLogin,
+  verifySession,
+} from '../controllers/auth.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 
 const router = Router();
+
+/**
+ * POST /api/auth/primary-login
+ * Direct login for the primary creator account (rafi2nd@gmail.com).
+ */
+router.post('/primary-login', primaryLogin);
+
+/**
+ * GET /api/auth/verify-session
+ * Checks whether the current authorization header (primary token or Appwrite JWT) is valid.
+ */
+router.get('/verify-session', requireAuth, verifySession);
 
 /**
  * GET /api/auth/legacy-status

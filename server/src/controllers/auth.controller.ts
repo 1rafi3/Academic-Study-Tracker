@@ -5,6 +5,13 @@ import { Course } from '../models/Course.js';
 import { ClassInstance } from '../models/ClassInstance.js';
 import { AcademicEvent } from '../models/AcademicEvent.js';
 import { MigrationLog } from '../models/MigrationLog.js';
+import {
+  validatePrimaryCredentials,
+  createPrimaryToken,
+  PRIMARY_ACCOUNT_USER_ID,
+  PRIMARY_ACCOUNT_EMAIL,
+  PRIMARY_ACCOUNT_NAME,
+} from '../utils/primaryAuth.js';
 
 export interface MigrationSummaryResponse {
   success: boolean;
@@ -176,4 +183,104 @@ export const getLegacyStatus = async (req: Request, res: Response): Promise<void
     });
   }
 };
+
+/**
+ * POST /api/auth/primary-login
+ * Direct authentication endpoint for the primary account (rafi2nd@gmail.com).
+ * Validates master credentials and returns a secure HMAC-signed token and Appwrite-compatible user profile.
+ */
+export const primaryLogin = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, password } = req.body || {};
+
+    if (!email || !password) {
+      res.status(400).json({
+        success: false,
+        message: 'Email and password are required.',
+      });
+      return;
+    }
+
+    const isValid = validatePrimaryCredentials(String(email), String(password));
+    if (!isValid) {
+      res.status(401).json({
+        success: false,
+        message: 'Invalid email or password. Please check your credentials and try again.',
+      });
+      return;
+    }
+
+    const token = createPrimaryToken({
+      userId: PRIMARY_ACCOUNT_USER_ID,
+      email: PRIMARY_ACCOUNT_EMAIL,
+      name: PRIMARY_ACCOUNT_NAME,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Authentication successful.',
+      token,
+      user: {
+        $id: PRIMARY_ACCOUNT_USER_ID,
+        $createdAt: '2026-08-31T00:00:00.000Z',
+        $updatedAt: new Date().toISOString(),
+        name: PRIMARY_ACCOUNT_NAME,
+        registration: '2026-08-31T00:00:00.000Z',
+        status: true,
+        labels: ['primary'],
+        passwordUpdate: '2026-11-10T00:00:00.000Z',
+        email: PRIMARY_ACCOUNT_EMAIL,
+        phone: '',
+        emailVerification: true,
+        phoneVerification: false,
+        mfa: false,
+        prefs: {},
+        targets: [],
+        accessedAt: new Date().toISOString(),
+      },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Primary login failed';
+    res.status(500).json({
+      success: false,
+      message,
+    });
+  }
+};
+
+/**
+ * GET /api/auth/verify-session
+ * Verifies an active session (primary token or Appwrite JWT) and returns the authenticated user identity.
+ */
+export const verifySession = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.user || !req.userId) {
+      res.status(401).json({
+        success: false,
+        message: 'Session is invalid or expired. Please log in again.',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Session is active and valid.',
+      userId: req.userId,
+      user: {
+        $id: req.user.userId,
+        name: req.user.name,
+        email: req.user.email,
+        emailVerification: true,
+        status: true,
+      },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to verify session';
+    res.status(500).json({
+      success: false,
+      message,
+    });
+  }
+};
+
 

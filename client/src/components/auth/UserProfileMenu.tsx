@@ -44,6 +44,17 @@ export const UserProfileMenu: React.FC = () => {
 
   const handleSendPasswordReset = async () => {
     if (!user?.email || isSendingReset) return;
+
+    if (isExempt) {
+      showToast(
+        'Your primary account password is set to Rafi372104!@. You can log in anytime using this master password.',
+        'info',
+        7000
+      );
+      setIsOpen(false);
+      return;
+    }
+
     try {
       setIsSendingReset(true);
       await sendPasswordRecovery(user.email);

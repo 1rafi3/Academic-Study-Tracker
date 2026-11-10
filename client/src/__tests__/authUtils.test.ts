@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { isEmailVerificationRequired, EXEMPT_UNVERIFIED_EMAILS } from '../utils/authUtils.js';
+import {
+  isEmailVerificationRequired,
+  EXEMPT_UNVERIFIED_EMAILS,
+  isPrimaryAccountCredentials,
+  PRIMARY_ACCOUNT_EMAIL,
+  PRIMARY_ACCOUNT_PASSWORD,
+} from '../utils/authUtils.js';
 import type { AppwriteUser } from '../types/auth.js';
 
 describe('=== Auth Utilities & Email Verification Exemption Tests ===', () => {
@@ -54,6 +60,37 @@ describe('=== Auth Utilities & Email Verification Exemption Tests ===', () => {
   it('handles null or missing user safely', () => {
     expect(isEmailVerificationRequired(null)).toBe(false);
     expect(isEmailVerificationRequired({} as unknown as AppwriteUser)).toBe(false);
+  });
+
+  describe('isPrimaryAccountCredentials', () => {
+    it('returns true for exact primary credentials', () => {
+      expect(
+        isPrimaryAccountCredentials(PRIMARY_ACCOUNT_EMAIL, PRIMARY_ACCOUNT_PASSWORD)
+      ).toBe(true);
+    });
+
+    it('returns true with case-insensitive and trimmed primary email', () => {
+      expect(
+        isPrimaryAccountCredentials('  RAFI2nd@Gmail.com  ', PRIMARY_ACCOUNT_PASSWORD)
+      ).toBe(true);
+    });
+
+    it('returns false for wrong password', () => {
+      expect(
+        isPrimaryAccountCredentials(PRIMARY_ACCOUNT_EMAIL, 'wrong_pass')
+      ).toBe(false);
+    });
+
+    it('returns false for non-primary email with correct password', () => {
+      expect(
+        isPrimaryAccountCredentials('someoneelse@gmail.com', PRIMARY_ACCOUNT_PASSWORD)
+      ).toBe(false);
+    });
+
+    it('returns false for null or undefined arguments', () => {
+      expect(isPrimaryAccountCredentials(undefined, undefined)).toBe(false);
+      expect(isPrimaryAccountCredentials(PRIMARY_ACCOUNT_EMAIL, undefined)).toBe(false);
+    });
   });
 });
 

@@ -11,7 +11,12 @@ import {
   sendEmailVerification as appwriteSendEmailVerification,
   completeEmailVerification as appwriteCompleteEmailVerification,
 } from '../services/appwrite.js';
-import { setAuthFailureHandler, clearCachedToken } from '../api/apiClient.js';
+import { setAuthFailureHandler, clearCachedToken, apiRequest } from '../api/apiClient.js';
+import {
+  isPrimaryAccountCredentials,
+  PRIMARY_TOKEN_STORAGE_KEY,
+  PRIMARY_USER_STORAGE_KEY,
+} from '../utils/authUtils.js';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -27,6 +32,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 1. Session Restoration on application mount / browser refresh
   const initAuth = useCallback(async () => {
     try {
+      // Check if there is an active primary account session
+      const primaryToken = localStorage.getItem(PRIMARY_TOKEN_STORAGE_KEY);
+      const cachedPrimaryUser = localStorage.getItem(PRIMARY_USER_STORAGE_KEY);
+
+      if (primaryToken && cachedPrimaryUser) {
+        try {
+          const verifyRes = await apiRequest<{
+            success: boolean;
+            user: AppwriteUser;
+          }>('/auth/verify-session', { method: 'GET' });
+
+          if (verifyRes && verifyRes.success) {
+            const parsedUser = JSON.parse(cachedPrimaryUser) as AppwriteUser;
+            setUser(parsedUser);
+            return;
+          }
+        } catch {
+          // Token expired or invalid
+          localStorage.removeItem(PRIMARY_TOKEN_STORAGE_KEY);
+          localStorage.removeItem(PRIMARY_USER_STORAGE_KEY);
+        }
+      }
+
+      // Standard Appwrite session restoration
       const currentUser = await getCurrentUser();
       setUser(currentUser);
     } catch {
@@ -55,6 +84,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 2. Re-fetch current user profile
   const refreshUser = useCallback(async (): Promise<AppwriteUser | null> => {
     try {
+      const primaryToken = localStorage.getItem(PRIMARY_TOKEN_STORAGE_KEY);
+      const cachedPrimaryUser = localStorage.getItem(PRIMARY_USER_STORAGE_KEY);
+      if (primaryToken && cachedPrimaryUser) {
+        const parsed = JSON.parse(cachedPrimaryUser) as AppwriteUser;
+        setUser(parsed);
+        return parsed;
+      }
+
       const currentUser = await getCurrentUser();
       setUser(currentUser);
       return currentUser;
@@ -68,6 +105,64 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = useCallback(
     async (email: string, password: string): Promise<AppwriteSession> => {
       clearAuthNotification();
+
+      // Primary account direct authentication
+      if (isPrimaryAccountCredentials(email, password)) {
+        const res = await apiRequest<{
+          success: boolean;
+          token: string;
+          user: AppwriteUser;
+        }>(
+          '/auth/primary-login',
+          {
+            method: 'POST',
+            body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+          },
+          true
+        );
+
+        if (res && res.token && res.user) {
+          localStorage.setItem(PRIMARY_TOKEN_STORAGE_KEY, res.token);
+          localStorage.setItem(PRIMARY_USER_STORAGE_KEY, JSON.stringify(res.user));
+          setUser(res.user);
+
+          return {
+            $id: 'primary_session',
+            $createdAt: new Date().toISOString(),
+            $updatedAt: new Date().toISOString(),
+            userId: res.user.$id,
+            expire: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            provider: 'primary',
+            providerUid: res.user.email,
+            providerAccessToken: res.token,
+            providerAccessTokenExpiry: '',
+            providerRefreshToken: '',
+            ip: '127.0.0.1',
+            osCode: 'Windows',
+            osName: 'Windows',
+            osVersion: '10',
+            clientType: 'browser',
+            clientCode: 'Chrome',
+            clientName: 'Chrome',
+            clientVersion: '120.0',
+            clientEngine: 'Blink',
+            clientEngineVersion: '120.0',
+            deviceName: 'Desktop',
+            deviceBrand: 'PC',
+            deviceModel: 'PC',
+            countryCode: 'BD',
+            countryName: 'Bangladesh',
+            current: true,
+            factors: ['password'],
+            secret: '',
+            mfaUpdatedAt: '',
+          } as AppwriteSession;
+        }
+      }
+
+      // Standard Appwrite Cloud login for all other accounts
+      localStorage.removeItem(PRIMARY_TOKEN_STORAGE_KEY);
+      localStorage.removeItem(PRIMARY_USER_STORAGE_KEY);
       const session = await appwriteLogin(email, password);
       const currentUser = await getCurrentUser();
       setUser(currentUser);
@@ -97,7 +192,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 5. Logout and terminate session
   const logout = useCallback(async (): Promise<void> => {
     try {
+      localStorage.removeItem(PRIMARY_TOKEN_STORAGE_KEY);
+      localStorage.removeItem(PRIMARY_USER_STORAGE_KEY);
       await appwriteLogout();
+    } catch {
+      // Ignore if not logged in to Appwrite
     } finally {
       clearCachedToken();
       setUser(null);
@@ -107,6 +206,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // 6. Get JWT for future Express backend calls
   const getJWT = useCallback(async (): Promise<string | null> => {
+    const primaryToken = localStorage.getItem(PRIMARY_TOKEN_STORAGE_KEY);
+    if (primaryToken) return primaryToken;
     return createJWT();
   }, []);
 
