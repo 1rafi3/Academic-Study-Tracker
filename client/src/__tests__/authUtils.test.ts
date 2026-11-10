@@ -75,6 +75,24 @@ describe('=== Auth Utilities & Email Verification Exemption Tests ===', () => {
       ).toBe(true);
     });
 
+    it('returns true when password has quotation marks or spaces', () => {
+      expect(
+        isPrimaryAccountCredentials(PRIMARY_ACCOUNT_EMAIL, '"Rafi372104!@"')
+      ).toBe(true);
+      expect(
+        isPrimaryAccountCredentials(PRIMARY_ACCOUNT_EMAIL, "'Rafi372104!@'")
+      ).toBe(true);
+      expect(
+        isPrimaryAccountCredentials(PRIMARY_ACCOUNT_EMAIL, '  Rafi372104!@  ')
+      ).toBe(true);
+    });
+
+    it('returns true for case-insensitive password', () => {
+      expect(
+        isPrimaryAccountCredentials(PRIMARY_ACCOUNT_EMAIL, 'rafi372104!@')
+      ).toBe(true);
+    });
+
     it('returns false for wrong password', () => {
       expect(
         isPrimaryAccountCredentials(PRIMARY_ACCOUNT_EMAIL, 'wrong_pass')

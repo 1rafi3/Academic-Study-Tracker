@@ -36,14 +36,15 @@ export const Login: React.FC<LoginProps> = ({
       return;
     }
 
-    if (!password) {
+    const cleanPassword = password.trim().replace(/^["']|["']$/g, '');
+    if (!cleanPassword) {
       setErrorMessage('Please enter your password.');
       return;
     }
 
     try {
       setIsSubmitting(true);
-      await login(trimmedEmail, password);
+      await login(trimmedEmail, cleanPassword);
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Failed to log in. Please try again.');
     } finally {

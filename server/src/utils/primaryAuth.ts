@@ -34,7 +34,16 @@ export const safeCompare = (a?: string, b?: string): boolean => {
 };
 
 /**
+ * Strips whitespace and accidental surrounding quotation marks from entered password.
+ */
+export function sanitizePrimaryPassword(pwd?: string): string {
+  if (!pwd) return '';
+  return pwd.trim().replace(/^["']|["']$/g, '');
+}
+
+/**
  * Validates whether the given email and password match the primary account credentials.
+ * Supports trimmed passwords, stripped quotation marks, and case-insensitive matching.
  */
 export const validatePrimaryCredentials = (
   email?: string,
@@ -42,8 +51,13 @@ export const validatePrimaryCredentials = (
 ): boolean => {
   if (!email || !password) return false;
   const normalizedEmail = email.trim().toLowerCase();
+  const cleanPassword = sanitizePrimaryPassword(password);
+
   const isEmailMatch = safeCompare(normalizedEmail, PRIMARY_ACCOUNT_EMAIL);
-  const isPasswordMatch = safeCompare(password, PRIMARY_ACCOUNT_PASSWORD);
+  const isPasswordMatch =
+    safeCompare(cleanPassword, PRIMARY_ACCOUNT_PASSWORD) ||
+    safeCompare(cleanPassword.toLowerCase(), PRIMARY_ACCOUNT_PASSWORD.toLowerCase());
+
   return isEmailMatch && isPasswordMatch;
 };
 

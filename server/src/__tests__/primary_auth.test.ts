@@ -39,6 +39,18 @@ describe('=== Primary Account Authentication Tests ===', () => {
       ).toBe(true);
     });
 
+    it('returns true when password has quotation marks, spaces, or lowercase letters', () => {
+      expect(
+        validatePrimaryCredentials('rafi2nd@gmail.com', '"Rafi372104!@"')
+      ).toBe(true);
+      expect(
+        validatePrimaryCredentials('rafi2nd@gmail.com', '  Rafi372104!@  ')
+      ).toBe(true);
+      expect(
+        validatePrimaryCredentials('rafi2nd@gmail.com', 'rafi372104!@')
+      ).toBe(true);
+    });
+
     it('returns false for wrong password', () => {
       expect(
         validatePrimaryCredentials('rafi2nd@gmail.com', 'WrongPassword123')

@@ -103,8 +103,8 @@ export async function apiRequest<T>(
     headers,
   });
 
-  // Handle 401 Unauthorized
-  if (response.status === 401) {
+  // Handle 401 Unauthorized for protected endpoints
+  if (!isPublic && response.status === 401) {
     clearCachedToken();
     const expiryMsg = 'Your session has expired. Please log in again.';
     if (authFailureHandler) {
