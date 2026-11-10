@@ -4,9 +4,13 @@ import { useAuth } from '../../context/AuthContext.js';
 
 interface LoginProps {
   onSwitchToRegister: () => void;
+  onSwitchToForgotPassword: (email?: string) => void;
 }
 
-export const Login: React.FC<LoginProps> = ({ onSwitchToRegister }) => {
+export const Login: React.FC<LoginProps> = ({
+  onSwitchToRegister,
+  onSwitchToForgotPassword,
+}) => {
   const { login, authNotification, clearAuthNotification } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -99,10 +103,19 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToRegister }) => {
 
         {/* Password Field */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-            <Lock className="w-3.5 h-3.5 text-indigo-400" />
-            Password
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5 text-indigo-400" />
+              Password
+            </label>
+            <button
+              type="button"
+              onClick={() => onSwitchToForgotPassword(email)}
+              className="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 transition cursor-pointer hover:underline"
+            >
+              Forgot password?
+            </button>
+          </div>
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}

@@ -34,6 +34,10 @@ export const parseAppwriteError = (error: unknown): string => {
         return 'Too many attempts. Please wait a few moments before trying again.';
       case 'user_session_already_exists':
         return 'A user session is already active. Please refresh the page.';
+      case 'user_not_found':
+        return 'No account was found with this email address.';
+      case 'user_invalid_token':
+        return 'This security link is invalid or has already expired. Please request a new one.';
       default:
         return error.message || 'An authentication error occurred. Please try again.';
     }
@@ -104,6 +108,70 @@ export const getCurrentUser = async (): Promise<AppwriteUser | null> => {
       return null;
     }
     return null;
+  }
+};
+
+/**
+ * Sends a password recovery email to the specified address.
+ * Generates an email link pointing back to the app with ?mode=reset-password.
+ */
+export const sendPasswordRecovery = async (
+  email: string,
+  redirectUrl?: string
+): Promise<void> => {
+  try {
+    const targetUrl =
+      redirectUrl ||
+      `${window.location.origin}${window.location.pathname}?mode=reset-password`;
+    await account.createRecovery(email.trim(), targetUrl);
+  } catch (err: unknown) {
+    throw new Error(parseAppwriteError(err));
+  }
+};
+
+/**
+ * Completes password recovery using the userId and secret token received from the email link.
+ */
+export const completePasswordRecovery = async (
+  userId: string,
+  secret: string,
+  password: string
+): Promise<void> => {
+  try {
+    await account.updateRecovery(userId, secret, password);
+  } catch (err: unknown) {
+    throw new Error(parseAppwriteError(err));
+  }
+};
+
+/**
+ * Sends an email verification link to the currently logged in user's email address.
+ * Generates an email link pointing back to the app with ?mode=verify-email.
+ */
+export const sendEmailVerification = async (
+  redirectUrl?: string
+): Promise<void> => {
+  try {
+    const targetUrl =
+      redirectUrl ||
+      `${window.location.origin}${window.location.pathname}?mode=verify-email`;
+    await account.createVerification(targetUrl);
+  } catch (err: unknown) {
+    throw new Error(parseAppwriteError(err));
+  }
+};
+
+/**
+ * Completes email verification using the userId and secret token received from the verification email link.
+ */
+export const completeEmailVerification = async (
+  userId: string,
+  secret: string
+): Promise<void> => {
+  try {
+    await account.updateVerification(userId, secret);
+  } catch (err: unknown) {
+    throw new Error(parseAppwriteError(err));
   }
 };
 

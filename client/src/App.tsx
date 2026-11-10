@@ -19,6 +19,9 @@ import { ScheduleManager } from './components/ScheduleManager.js';
 import { ClassInstanceManager } from './components/ClassInstanceManager.js';
 import { GpaCalculator } from './components/GpaCalculator.js';
 import { SeasonalBackground } from './components/seasonal/SeasonalBackground.js';
+import { isEmailVerificationRequired } from './utils/authUtils.js';
+import { VerifyEmailScreen } from './components/auth/VerifyEmailScreen.js';
+import { useToast } from './context/ToastContext.js';
 
 const LAST_ACTIVE_SEMESTER_KEY = 'academic_tracker_active_semester_id';
 
@@ -219,7 +222,65 @@ function MainDashboard() {
 }
 
 export function App() {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { user, isLoading, isAuthenticated, completeEmailVerification } = useAuth();
+  const { showToast } = useToast();
+
+  // Detect and handle security URL parameters (Password Reset & Email Verification links)
+  const [urlAuthAction, setUrlAuthAction] = useState<{
+    mode: 'reset-password' | 'verify-email';
+    userId: string;
+    secret: string;
+  } | null>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const userId = params.get('userId');
+      const secret = params.get('secret');
+      const mode = params.get('mode');
+
+      if (userId && secret) {
+        if (mode === 'verify-email') {
+          return { mode: 'verify-email', userId, secret };
+        }
+        return { mode: 'reset-password', userId, secret };
+      }
+    } catch {
+      // Ignore URL parsing errors
+    }
+    return null;
+  });
+
+  const clearUrlAuthParams = () => {
+    setUrlAuthAction(null);
+    try {
+      const cleanUrl = window.location.origin + window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    } catch {
+      // Ignore history manipulation errors
+    }
+  };
+
+  // If email verification link is detected in URL, auto-verify!
+  useEffect(() => {
+    if (urlAuthAction?.mode === 'verify-email') {
+      completeEmailVerification(urlAuthAction.userId, urlAuthAction.secret)
+        .then(() => {
+          showToast(
+            'Email verified successfully! Welcome to your Academic Tracker.',
+            'success',
+            6000
+          );
+          clearUrlAuthParams();
+        })
+        .catch((err: unknown) => {
+          const msg =
+            err instanceof Error
+              ? err.message
+              : 'Email verification link is invalid or has expired.';
+          showToast(msg, 'error', 6000);
+          clearUrlAuthParams();
+        });
+    }
+  }, [urlAuthAction, completeEmailVerification, showToast]);
 
   // Keep Render free-tier backend alive by pinging /api/health every 10 minutes
   useKeepAlive();
@@ -231,12 +292,29 @@ export function App() {
     }
   }, [isAuthenticated]);
 
+  // Handle incoming password reset links even before checking existing session
+  if (urlAuthAction?.mode === 'reset-password') {
+    return (
+      <AuthScreen
+        initialMode="reset-password"
+        recoveryUserId={urlAuthAction.userId}
+        recoverySecret={urlAuthAction.secret}
+        onClearUrlParams={clearUrlAuthParams}
+      />
+    );
+  }
+
   if (isLoading) {
     return <LoadingScreen />;
   }
 
   if (!isAuthenticated) {
-    return <AuthScreen />;
+    return <AuthScreen onClearUrlParams={clearUrlAuthParams} />;
+  }
+
+  // Mandatory Email Verification gatekeeping (rafi2nd@gmail.com is strictly exempt)
+  if (isEmailVerificationRequired(user)) {
+    return <VerifyEmailScreen />;
   }
 
   return (

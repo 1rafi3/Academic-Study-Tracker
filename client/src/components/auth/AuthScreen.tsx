@@ -2,9 +2,31 @@ import React, { useState } from 'react';
 import { GraduationCap, Sparkles } from 'lucide-react';
 import { Login } from './Login.js';
 import { Register } from './Register.js';
+import { ForgotPassword } from './ForgotPassword.js';
+import { ResetPassword } from './ResetPassword.js';
 
-export const AuthScreen: React.FC = () => {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+interface AuthScreenProps {
+  initialMode?: 'login' | 'register' | 'forgot-password' | 'reset-password';
+  recoveryUserId?: string;
+  recoverySecret?: string;
+  onClearUrlParams?: () => void;
+}
+
+export const AuthScreen: React.FC<AuthScreenProps> = ({
+  initialMode = 'login',
+  recoveryUserId = '',
+  recoverySecret = '',
+  onClearUrlParams,
+}) => {
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot-password' | 'reset-password'>(initialMode);
+  const [targetEmail, setTargetEmail] = useState<string>('');
+
+  const handleResetComplete = () => {
+    if (onClearUrlParams) {
+      onClearUrlParams();
+    }
+    setMode('login');
+  };
 
   return (
     <div className="min-h-screen w-full bg-slate-950 text-slate-100 flex flex-col justify-center items-center p-4 relative overflow-hidden">
@@ -40,10 +62,33 @@ export const AuthScreen: React.FC = () => {
 
       {/* Main Authentication Card */}
       <div className="relative z-10 w-full flex justify-center">
-        {mode === 'login' ? (
-          <Login onSwitchToRegister={() => setMode('register')} />
-        ) : (
+        {mode === 'login' && (
+          <Login
+            onSwitchToRegister={() => setMode('register')}
+            onSwitchToForgotPassword={(email) => {
+              if (email) setTargetEmail(email);
+              setMode('forgot-password');
+            }}
+          />
+        )}
+
+        {mode === 'register' && (
           <Register onSwitchToLogin={() => setMode('login')} />
+        )}
+
+        {mode === 'forgot-password' && (
+          <ForgotPassword
+            initialEmail={targetEmail}
+            onBackToLogin={() => setMode('login')}
+          />
+        )}
+
+        {mode === 'reset-password' && (
+          <ResetPassword
+            userId={recoveryUserId}
+            secret={recoverySecret}
+            onComplete={handleResetComplete}
+          />
         )}
       </div>
 

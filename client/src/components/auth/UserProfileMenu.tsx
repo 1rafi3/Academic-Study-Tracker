@@ -1,11 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, LogOut, ChevronDown, Loader2, ShieldCheck } from 'lucide-react';
+import { User, LogOut, ChevronDown, Loader2, KeyRound, CheckCircle2, Shield } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.js';
+import { useToast } from '../../context/ToastContext.js';
+import { EXEMPT_UNVERIFIED_EMAILS } from '../../utils/authUtils.js';
 
 export const UserProfileMenu: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, sendPasswordRecovery } = useAuth();
+  const { showToast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isSendingReset, setIsSendingReset] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on click outside or Escape
@@ -34,6 +38,28 @@ export const UserProfileMenu: React.FC = () => {
 
   const displayName = user.name || user.email.split('@')[0];
   const initial = displayName.charAt(0).toUpperCase();
+  const isExempt = EXEMPT_UNVERIFIED_EMAILS.some(
+    (e) => e.toLowerCase() === user.email.toLowerCase().trim()
+  );
+
+  const handleSendPasswordReset = async () => {
+    if (!user?.email || isSendingReset) return;
+    try {
+      setIsSendingReset(true);
+      await sendPasswordRecovery(user.email);
+      showToast(
+        `Password reset link sent to ${user.email}! Please check your email inbox to choose a new password.`,
+        'success',
+        7000
+      );
+      setIsOpen(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to send recovery email.';
+      showToast(msg, 'error');
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -74,17 +100,52 @@ export const UserProfileMenu: React.FC = () => {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-60 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl backdrop-blur-xl z-50 p-2 space-y-2 animate-in fade-in zoom-in-95">
           {/* User Details */}
-          <div className="px-3 py-2 border-b border-slate-800/80 space-y-0.5">
+          <div className="px-3 py-2 border-b border-slate-800/80 space-y-1">
             <div className="flex items-center gap-1.5 text-xs font-bold text-slate-100">
               <User className="w-3.5 h-3.5 text-indigo-400" />
               <span className="truncate">{user.name || 'Student'}</span>
             </div>
             <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
-            <div className="pt-1 flex items-center gap-1 text-[10px] text-emerald-400 font-medium">
-              <ShieldCheck className="w-3 h-3" />
-              <span>Appwrite Authenticated</span>
+            <div className="pt-0.5 flex items-center justify-between gap-1 text-[10px]">
+              {isExempt ? (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/25 font-semibold">
+                  <Shield className="w-2.5 h-2.5" />
+                  Owner (Exempt)
+                </span>
+              ) : user.emailVerification ? (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 font-semibold">
+                  <CheckCircle2 className="w-2.5 h-2.5" />
+                  Verified
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-500/10 text-rose-300 border border-rose-500/25 font-semibold">
+                  Unverified
+                </span>
+              )}
+              <span className="text-slate-500 font-mono">Cloud</span>
             </div>
           </div>
+
+          {/* Password Recovery Action (In-session reset without logout) */}
+          <button
+            type="button"
+            disabled={isSendingReset}
+            onClick={handleSendPasswordReset}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800/80 hover:text-white transition cursor-pointer disabled:opacity-50"
+            title="Send a password reset link to your email to update your forgotten password"
+          >
+            {isSendingReset ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
+                <span>Sending Reset Link...</span>
+              </>
+            ) : (
+              <>
+                <KeyRound className="w-3.5 h-3.5 text-amber-400" />
+                <span>Reset Password</span>
+              </>
+            )}
+          </button>
 
           {/* Logout Action */}
           <button

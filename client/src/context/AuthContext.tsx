@@ -6,6 +6,10 @@ import {
   register as appwriteRegister,
   logout as appwriteLogout,
   createJWT,
+  sendPasswordRecovery as appwriteSendPasswordRecovery,
+  completePasswordRecovery as appwriteCompletePasswordRecovery,
+  sendEmailVerification as appwriteSendEmailVerification,
+  completeEmailVerification as appwriteCompleteEmailVerification,
 } from '../services/appwrite.js';
 import { setAuthFailureHandler, clearCachedToken } from '../api/apiClient.js';
 
@@ -106,6 +110,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return createJWT();
   }, []);
 
+  // 7. Password Recovery
+  const sendPasswordRecovery = useCallback(async (email: string): Promise<void> => {
+    await appwriteSendPasswordRecovery(email);
+  }, []);
+
+  const completePasswordRecovery = useCallback(
+    async (userId: string, secret: string, password: string): Promise<void> => {
+      await appwriteCompletePasswordRecovery(userId, secret, password);
+    },
+    []
+  );
+
+  // 8. Email Verification
+  const sendEmailVerification = useCallback(async (): Promise<void> => {
+    await appwriteSendEmailVerification();
+  }, []);
+
+  const completeEmailVerification = useCallback(
+    async (userId: string, secret: string): Promise<void> => {
+      await appwriteCompleteEmailVerification(userId, secret);
+      // Immediately refresh user state to update emailVerification flag
+      const updated = await getCurrentUser();
+      setUser(updated);
+    },
+    []
+  );
+
   const value: AuthContextType = {
     user,
     isLoading,
@@ -117,6 +148,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getJWT,
     authNotification,
     clearAuthNotification,
+    sendPasswordRecovery,
+    completePasswordRecovery,
+    sendEmailVerification,
+    completeEmailVerification,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

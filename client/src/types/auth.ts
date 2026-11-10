@@ -24,4 +24,8 @@ export interface AuthContextType {
   getJWT: () => Promise<string | null>;
   authNotification: string | null;
   clearAuthNotification: () => void;
+  sendPasswordRecovery: (email: string) => Promise<void>;
+  completePasswordRecovery: (userId: string, secret: string, password: string) => Promise<void>;
+  sendEmailVerification: () => Promise<void>;
+  completeEmailVerification: (userId: string, secret: string) => Promise<void>;
 }
