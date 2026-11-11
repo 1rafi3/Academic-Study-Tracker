@@ -11,7 +11,7 @@ import { useTheme } from '../context/ThemeContext.js';
 import { ThemeStyleSwitcher } from './ThemeStyleSwitcher.js';
 import { SeasonalControlBadge } from './seasonal/SeasonalControlBadge.js';
 
-export type TabType = 'calendar' | 'notes' | 'routine' | 'analytics' | 'gpa' | 'backup' | 'classes' | 'academic';
+export type TabType = 'calendar' | 'hub' | 'notes' | 'routine' | 'analytics' | 'gpa' | 'backup' | 'classes' | 'academic';
 
 interface NavbarProps {
   activeTab: TabType;

@@ -14,6 +14,7 @@ import type {
   IBackupValidationResult,
   ISemesterSummaryReport,
   ClassGenerationResult,
+  ICourseAssessmentStructure,
 } from '../types/academic.js';
 import { apiRequest, apiBlobRequest, API_BASE } from './apiClient.js';
 
@@ -314,6 +315,75 @@ export const academicEventApi = {
     return apiRequest<IAcademicEvent>(`/academic-events/${id}`, {
       method: 'DELETE',
     });
+  },
+
+  // Phase 11: Course Academic Hub - update event result (marks, notes, completion)
+  async updateResult(
+    id: string,
+    data: {
+      obtainedMarks?: number | null;
+      fullMarks?: number | null;
+      personalNotes?: string;
+      isCompleted?: boolean;
+    }
+  ): Promise<IAcademicEvent> {
+    return apiRequest<IAcademicEvent>(`/academic-events/${id}/result`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+// Phase 11: Assessment Structure API
+export const assessmentStructureApi = {
+  async get(courseId: string): Promise<ICourseAssessmentStructure> {
+    return apiRequest<ICourseAssessmentStructure>(`/assessment-structures/${courseId}`);
+  },
+
+  async upsert(courseId: string, components: Array<{
+    name: string;
+    allocatedMarks: number;
+    isOptional?: boolean;
+    order?: number;
+  }>): Promise<ICourseAssessmentStructure> {
+    return apiRequest<ICourseAssessmentStructure>(`/assessment-structures/${courseId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ components }),
+    });
+  },
+
+  async addComponent(courseId: string, component: {
+    name: string;
+    allocatedMarks: number;
+    isOptional?: boolean;
+    order?: number;
+  }): Promise<ICourseAssessmentStructure> {
+    return apiRequest<ICourseAssessmentStructure>(`/assessment-structures/${courseId}/components`, {
+      method: 'POST',
+      body: JSON.stringify(component),
+    });
+  },
+
+  async updateComponent(courseId: string, componentId: string, data: {
+    name?: string;
+    allocatedMarks?: number;
+    isOptional?: boolean;
+    order?: number;
+  }): Promise<ICourseAssessmentStructure> {
+    return apiRequest<ICourseAssessmentStructure>(
+      `/assessment-structures/${courseId}/components/${componentId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }
+    );
+  },
+
+  async deleteComponent(courseId: string, componentId: string): Promise<ICourseAssessmentStructure> {
+    return apiRequest<ICourseAssessmentStructure>(
+      `/assessment-structures/${courseId}/components/${componentId}`,
+      { method: 'DELETE' }
+    );
   },
 };
 

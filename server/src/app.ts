@@ -16,6 +16,7 @@ import semesterRoutes from './routes/semester.routes.js';
 import courseRoutes from './routes/course.routes.js';
 import classInstanceRoutes from './routes/classInstance.routes.js';
 import academicEventRoutes from './routes/academicEvent.routes.js';
+import assessmentStructureRoutes from './routes/assessmentStructure.routes.js';
 import holidayRoutes from './routes/holiday.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
 import backupRoutes from './routes/backup.routes.js';
@@ -64,6 +65,7 @@ app.use('/api/semesters', requireAuth, semesterRoutes);
 app.use('/api/courses', requireAuth, courseRoutes);
 app.use('/api/class-instances', requireAuth, classInstanceRoutes);
 app.use('/api/academic-events', requireAuth, academicEventRoutes);
+app.use('/api/assessment-structures', requireAuth, assessmentStructureRoutes);
 app.use('/api/analytics', requireAuth, analyticsRoutes);
 app.use('/api/backup', requireAuth, backupRoutes);
 

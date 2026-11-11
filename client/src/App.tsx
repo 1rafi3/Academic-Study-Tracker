@@ -9,6 +9,7 @@ import { Sidebar } from './components/Sidebar.js';
 import type { TabType } from './components/Navbar.js';
 import { useKeepAlive } from './hooks/useKeepAlive.js';
 import { CalendarDashboard } from './components/CalendarDashboard.js';
+import { CourseAcademicHub } from './components/CourseAcademicHub.js';
 import { CourseNotesTimeline } from './components/CourseNotesTimeline.js';
 import { AttendanceAnalytics } from './components/AttendanceAnalytics.js';
 import { WeeklyRoutine } from './components/WeeklyRoutine.js';
@@ -109,6 +110,17 @@ function MainDashboard() {
                   onSelectSemester={handleSelectSemester}
                   onNavigateToSetup={() => setActiveTab('academic')}
                   onNavigateToGenerator={() => setActiveTab('classes')}
+                />
+              </main>
+            )}
+
+            {/* Tab: Course Academic Hub & Event Explorer (Phase 11) */}
+            {activeTab === 'hub' && (
+              <main className="space-y-6">
+                <CourseAcademicHub
+                  selectedSemesterId={selectedSemesterId}
+                  onSelectSemester={handleSelectSemester}
+                  onNavigateToSetup={() => setActiveTab('academic')}
                 />
               </main>
             )}

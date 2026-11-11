@@ -135,11 +135,42 @@ export interface IAcademicEvent {
   endTime?: string;
   room?: string;
   description?: string;
+  // Phase 11: Course Academic Hub - event result fields
+  obtainedMarks?: number;
+  fullMarks?: number;
+  personalNotes?: string;
+  isCompleted?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 export interface IAcademicEventDocument extends IAcademicEvent, Document {}
+
+// Phase 11: Assessment Structure interfaces
+export interface IAssessmentComponent {
+  _id?: Types.ObjectId | string;
+  name: string;
+  allocatedMarks: number;
+  isOptional?: boolean;
+  order?: number;
+}
+
+export interface IAssessmentComponentDocument extends Omit<IAssessmentComponent, '_id'>, Document {
+  _id: Types.ObjectId;
+}
+
+export interface ICourseAssessmentStructure {
+  userId?: string;
+  courseId: Types.ObjectId | string;
+  semesterId: Types.ObjectId | string;
+  components: IAssessmentComponent[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface ICourseAssessmentStructureDocument extends Omit<ICourseAssessmentStructure, 'components'>, Document {
+  components: Types.DocumentArray<IAssessmentComponentDocument>;
+}
 
 export interface CourseAttendanceStats {
   courseId: string;

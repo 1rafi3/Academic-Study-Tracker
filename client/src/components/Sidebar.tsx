@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Calendar as CalendarIcon,
+  Award,
   FileText,
   Clock,
   Target,
@@ -32,6 +33,7 @@ interface SidebarProps {
 
 export const TABS = [
   { id: 'calendar', label: 'Calendar', icon: CalendarIcon, badge: 'Main' },
+  { id: 'hub', label: 'Academic Hub', icon: Award, badge: 'New' },
   { id: 'notes', label: 'Study Notes', icon: FileText },
   { id: 'routine', label: 'Weekly Routine', icon: Clock },
   { id: 'analytics', label: 'Analytics', icon: Target },
@@ -84,7 +86,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             Navigation
           </span>
           <span className="text-[10px] px-1.5 py-0.2 rounded font-semibold bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60">
-            8 Views
+            9 Views
           </span>
         </div>
 

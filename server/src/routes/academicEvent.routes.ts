@@ -5,6 +5,7 @@ import {
   createAcademicEvent,
   updateAcademicEvent,
   deleteAcademicEvent,
+  updateEventResult,
 } from '../controllers/academicEvent.controller.js';
 
 const router = Router();
@@ -17,5 +18,8 @@ router.route('/:id')
   .get(getAcademicEventById)
   .patch(updateAcademicEvent)
   .delete(deleteAcademicEvent);
+
+// Phase 11: Course Academic Hub - event result endpoint
+router.patch('/:id/result', updateEventResult);
 
 export default router;

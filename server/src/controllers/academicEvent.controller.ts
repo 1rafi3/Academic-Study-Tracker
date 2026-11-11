@@ -390,3 +390,97 @@ export const deleteAcademicEvent = async (req: Request, res: Response): Promise<
     res.status(500).json({ success: false, message });
   }
 };
+
+
+export const updateEventResult = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ success: false, message: 'Invalid academic event ID format' });
+      return;
+    }
+
+    const { obtainedMarks, fullMarks, personalNotes, isCompleted } = req.body;
+
+    const updateFields: Record<string, unknown> = {};
+
+    // Validate and set fullMarks
+    if (fullMarks !== undefined) {
+      if (fullMarks === null) {
+        updateFields.fullMarks = null;
+      } else {
+        const fm = Number(fullMarks);
+        if (isNaN(fm) || fm < 0) {
+          res.status(400).json({ success: false, message: 'Full marks must be a non-negative number' });
+          return;
+        }
+        updateFields.fullMarks = fm;
+      }
+    }
+
+    // Validate and set obtainedMarks
+    if (obtainedMarks !== undefined) {
+      if (obtainedMarks === null) {
+        updateFields.obtainedMarks = null;
+      } else {
+        const om = Number(obtainedMarks);
+        if (isNaN(om) || om < 0) {
+          res.status(400).json({ success: false, message: 'Obtained marks must be a non-negative number' });
+          return;
+        }
+        // Cross-validate: obtainedMarks cannot exceed fullMarks
+        let resolvedFullMarks: number | null | undefined =
+          updateFields.fullMarks !== undefined
+            ? (updateFields.fullMarks as number | null)
+            : undefined;
+        if (resolvedFullMarks === undefined) {
+          const existing = await AcademicEvent.findOne(buildUserFilter(req.userId, { _id: id }))
+            .select('fullMarks')
+            .lean();
+          resolvedFullMarks = existing?.fullMarks ?? null;
+        }
+        if (resolvedFullMarks !== null && resolvedFullMarks !== undefined && om > resolvedFullMarks) {
+          res.status(400).json({ success: false, message: 'Obtained marks cannot exceed full marks' });
+          return;
+        }
+        updateFields.obtainedMarks = om;
+      }
+    }
+
+    if (personalNotes !== undefined) {
+      updateFields.personalNotes = typeof personalNotes === 'string' ? personalNotes.trim() : '';
+    }
+
+    if (isCompleted !== undefined) {
+      updateFields.isCompleted = Boolean(isCompleted);
+    }
+
+    if (Object.keys(updateFields).length === 0) {
+      res.status(400).json({ success: false, message: 'No valid result fields provided' });
+      return;
+    }
+
+    const updated = await AcademicEvent.findOneAndUpdate(
+      buildUserFilter(req.userId, { _id: id }),
+      { $set: updateFields },
+      { new: true, runValidators: true }
+    )
+      .populate('courseId', 'courseCode courseName color instructor')
+      .populate('semesterId', 'name year term isActive');
+
+    if (!updated) {
+      res.status(404).json({ success: false, message: 'Academic event not found' });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Event result updated successfully',
+      data: updated,
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to update event result';
+    res.status(500).json({ success: false, message });
+  }
+};

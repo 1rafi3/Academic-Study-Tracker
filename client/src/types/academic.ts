@@ -105,8 +105,31 @@ export interface IAcademicEvent {
   endTime?: string;
   room?: string;
   description?: string;
+  // Phase 11: Course Academic Hub - event result fields
+  obtainedMarks?: number | null;
+  fullMarks?: number | null;
+  personalNotes?: string;
+  isCompleted?: boolean;
   createdAt?: string;
   updatedAt?: string;
+}
+
+// Phase 11: Assessment Structure interfaces
+export interface IAssessmentComponent {
+  _id?: string;
+  name: string;
+  allocatedMarks: number;
+  isOptional?: boolean;
+  order?: number;
+}
+
+export interface ICourseAssessmentStructure {
+  _id: string | null;
+  courseId: ICourse | string;
+  semesterId: ISemester | string;
+  components: IAssessmentComponent[];
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }
 
 export interface IBangladeshHoliday {

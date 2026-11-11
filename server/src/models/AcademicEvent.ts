@@ -77,6 +77,26 @@ const academicEventSchema = new Schema<IAcademicEventDocument>(
       trim: true,
       default: '',
     },
+    // Phase 11: Course Academic Hub - result tracking fields
+    obtainedMarks: {
+      type: Number,
+      default: null,
+      min: [0, 'Obtained marks cannot be negative'],
+    },
+    fullMarks: {
+      type: Number,
+      default: null,
+      min: [0, 'Full marks cannot be negative'],
+    },
+    personalNotes: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    isCompleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
@@ -93,6 +113,7 @@ const academicEventSchema = new Schema<IAcademicEventDocument>(
 academicEventSchema.index({ semesterId: 1, date: 1 });
 academicEventSchema.index({ courseId: 1, date: 1 });
 academicEventSchema.index({ userId: 1, semesterId: 1, date: 1 });
+academicEventSchema.index({ courseId: 1, isCompleted: 1 });
 
 export const AcademicEvent = model<IAcademicEventDocument>(
   'AcademicEvent',
