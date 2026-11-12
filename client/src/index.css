@@ -36,14 +36,14 @@
 
   [data-theme="light"],
   .light {
-    --bg-base: #f8fafc;
+    --bg-base: #f0f2f7;
     --bg-surface: #ffffff;
     --bg-surface-elevated: #ffffff;
-    --text-main: #0f172a;
-    --text-muted: #475569;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
     --border-color: #e2e8f0;
     --border-hover: rgba(99, 102, 241, 0.4);
-    --accent-glow: rgba(99, 102, 241, 0.08);
+    --accent-glow: rgba(99, 102, 241, 0.05);
 
     /* Accent theme colors */
     --color-indigo-950: #eef2ff;
@@ -74,8 +74,8 @@
   /* Universal Light Mode Body */
   [data-theme="light"] body,
   .light body {
-    background-color: #f8fafc !important;
-    color: #0f172a !important;
+    background-color: #f0f2f7 !important;
+    color: #1e293b !important;
   }
 
   /* 1. All Slate Card & Container Backgrounds in Light Mode */
@@ -95,7 +95,7 @@
   .light .bg-slate-900\/60,
   .light .bg-slate-900\/50 {
     background-color: #ffffff !important;
-    color: #0f172a !important;
+    color: #1e293b !important;
   }
 
   [data-theme="light"] .bg-slate-950,
@@ -105,18 +105,22 @@
   [data-theme="light"] .bg-slate-950\/60,
   [data-theme="light"] .bg-slate-950\/50,
   [data-theme="light"] .bg-slate-950\/40,
-  [data-theme="light"] .bg-slate-950\/30,
-  [data-theme="light"] .bg-slate-950\/20,
-  [data-theme="light"] .bg-slate-950\/10,
   .light .bg-slate-950,
   .light .bg-slate-950\/80,
   .light .bg-slate-950\/70,
   .light .bg-slate-950\/60,
   .light .bg-slate-950\/50,
-  .light .bg-slate-950\/40,
-  .light .bg-slate-950\/30 {
+  .light .bg-slate-950\/40 {
     background-color: #f8fafc !important;
-    color: #0f172a !important;
+    color: #1e293b !important;
+  }
+
+  [data-theme="light"] .bg-slate-950\/30,
+  [data-theme="light"] .bg-slate-950\/20,
+  [data-theme="light"] .bg-slate-950\/10,
+  .light .bg-slate-950\/30 {
+    background-color: rgba(241, 245, 249, 0.6) !important;
+    color: #1e293b !important;
   }
 
   [data-theme="light"] .bg-slate-800,
@@ -128,7 +132,7 @@
   .light .bg-slate-800\/80,
   .light .bg-slate-700 {
     background-color: #f1f5f9 !important;
-    color: #0f172a !important;
+    color: #1e293b !important;
   }
 
   [data-theme="light"] .bg-slate-100,
@@ -291,7 +295,7 @@
     border-color: #e2e8f0 !important;
   }
 
-  /* 4. All Text Typography in Light Mode */
+  /* 4. All Text Typography in Light Mode - Calibrated for high readability without glare */
   [data-theme="light"] .text-slate-900,
   .light .text-slate-900 {
     color: #0f172a !important;
@@ -319,7 +323,7 @@
 
   [data-theme="light"] .text-slate-400,
   .light .text-slate-400 {
-    color: #94a3b8 !important;
+    color: #64748b !important;
   }
 
   [data-theme="light"] .text-slate-300,
@@ -331,10 +335,10 @@
   [data-theme="light"] .text-slate-200,
   .light .text-slate-100,
   .light .text-slate-200 {
-    color: #0f172a !important;
+    color: #1e293b !important;
   }
 
-  /* Accent Text Typography */
+  /* Full Accent Text Palette - Deep, authoritative, rich inks instead of pale neon wash */
   [data-theme="light"] .text-indigo-200,
   [data-theme="light"] .text-indigo-300,
   .light .text-indigo-200,
@@ -347,34 +351,67 @@
     color: #4f46e5 !important;
   }
 
+  [data-theme="light"] .text-violet-200,
   [data-theme="light"] .text-violet-300,
+  [data-theme="light"] .text-violet-400,
   [data-theme="light"] .text-purple-300,
+  [data-theme="light"] .text-purple-400,
+  .light .text-violet-200,
   .light .text-violet-300,
-  .light .text-purple-300 {
+  .light .text-violet-400,
+  .light .text-purple-300,
+  .light .text-purple-400 {
     color: #6d28d9 !important;
+  }
+
+  [data-theme="light"] .text-blue-300,
+  [data-theme="light"] .text-blue-400,
+  .light .text-blue-300,
+  .light .text-blue-400 {
+    color: #1d4ed8 !important;
+  }
+
+  [data-theme="light"] .text-sky-300,
+  [data-theme="light"] .text-sky-400,
+  .light .text-sky-300,
+  .light .text-sky-400 {
+    color: #0284c7 !important;
+  }
+
+  [data-theme="light"] .text-cyan-300,
+  [data-theme="light"] .text-cyan-400,
+  .light .text-cyan-300,
+  .light .text-cyan-400 {
+    color: #0e7490 !important;
   }
 
   [data-theme="light"] .text-amber-200,
   [data-theme="light"] .text-amber-200\/80,
   [data-theme="light"] .text-amber-300,
   [data-theme="light"] .text-amber-300\/90,
+  [data-theme="light"] .text-amber-400,
   .light .text-amber-200,
-  .light .text-amber-300 {
+  .light .text-amber-300,
+  .light .text-amber-400 {
     color: #b45309 !important;
   }
 
   [data-theme="light"] .text-emerald-200,
   [data-theme="light"] .text-emerald-300,
+  [data-theme="light"] .text-emerald-400,
   .light .text-emerald-200,
-  .light .text-emerald-300 {
+  .light .text-emerald-300,
+  .light .text-emerald-400 {
     color: #047857 !important;
   }
 
   [data-theme="light"] .text-rose-200,
   [data-theme="light"] .text-rose-300,
   [data-theme="light"] .text-rose-300\/90,
+  [data-theme="light"] .text-rose-400,
   .light .text-rose-200,
-  .light .text-rose-300 {
+  .light .text-rose-300,
+  .light .text-rose-400 {
     color: #be123c !important;
   }
 
@@ -493,9 +530,9 @@
 }
 
 [data-theme="light"] .glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(148, 163, 184, 0.15);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
 }
 
 .glass-card {
@@ -507,9 +544,9 @@
 }
 
 [data-theme="light"] .glass-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.85) 100%);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 10px -1px rgba(15, 23, 42, 0.04);
 }
 
 .glass-card:hover {
@@ -696,10 +733,10 @@
 
 [data-ui-theme="bento-glass"][data-theme="light"],
 [data-ui-theme="bento-glass"].light {
-  --bento-bg: rgba(255, 255, 255, 0.85);
-  --bento-border: rgba(0, 0, 0, 0.08);
-  --bento-hover-border: rgba(99, 102, 241, 0.4);
-  --bento-glow: rgba(99, 102, 241, 0.1);
+  --bento-bg: rgba(255, 255, 255, 0.94);
+  --bento-border: rgba(15, 23, 42, 0.08);
+  --bento-hover-border: rgba(99, 102, 241, 0.35);
+  --bento-glow: rgba(99, 102, 241, 0.06);
 }
 
 /* Subtle ambient backdrop aura for Bento Glass */
@@ -718,9 +755,19 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
+[data-theme="light"] .bento-card,
+.light .bento-card {
+  box-shadow: 0 4px 18px -4px rgba(15, 23, 42, 0.05);
+}
+
 .bento-card:hover {
   border-color: var(--bento-hover-border, rgba(139, 92, 246, 0.4));
   box-shadow: 0 12px 32px -8px var(--bento-glow, rgba(139, 92, 246, 0.18));
+}
+
+[data-theme="light"] .bento-card:hover,
+.light .bento-card:hover {
+  box-shadow: 0 10px 24px -4px rgba(15, 23, 42, 0.08);
 }
 
 .bento-glow-safe {
@@ -747,6 +794,13 @@
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6) !important;
 }
 
+[data-theme="light"] .glass-modal,
+.light .glass-modal {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(15, 23, 42, 0.1) !important;
+  box-shadow: 0 20px 40px -8px rgba(15, 23, 42, 0.12) !important;
+}
+
 /* ============================================================ */
 /* Design System: Minimalist Slate (OLED Clean & Crisp)         */
 /* ============================================================ */
@@ -754,6 +808,13 @@
   --minimal-bg: #030712;
   --minimal-card-bg: #090e1a;
   --minimal-border: #1e293b;
+}
+
+[data-ui-theme="minimalist"][data-theme="light"],
+[data-ui-theme="minimalist"].light {
+  --minimal-bg: #f0f2f7;
+  --minimal-card-bg: #ffffff;
+  --minimal-border: #e2e8f0;
 }
 
 [data-ui-theme="minimalist"] body {

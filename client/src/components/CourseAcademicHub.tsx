@@ -144,33 +144,33 @@ export const CourseAcademicHub: React.FC<CourseAcademicHubProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Header & Course Selector Bar */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
+      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 shadow-xl space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="p-1.5 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
+              <span className="p-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-600/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30">
                 <BookOpen className="w-4 h-4" />
               </span>
-              <h1 className="text-lg sm:text-xl font-bold text-slate-100 tracking-tight">
+              <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                 Course Academic Hub
               </h1>
-              <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-semibold flex items-center gap-1">
+              <span className="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 text-[10px] font-semibold flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
                 Live Explorer
               </span>
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Course events, test results, personal performance notes, and custom assessment structure.
             </p>
           </div>
 
           {/* Semester Selector Dropdown */}
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs text-slate-400">Semester:</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">Semester:</span>
             <select
               value={activeSemester?._id || ''}
               onChange={(e) => onSelectSemester(e.target.value)}
-              className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs font-medium focus:outline-hidden focus:border-indigo-500 transition cursor-pointer"
+              className="px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs font-medium focus:outline-hidden focus:border-indigo-500 transition cursor-pointer"
             >
               {semesters.map((s) => (
                 <option key={s._id} value={s._id}>
@@ -182,8 +182,8 @@ export const CourseAcademicHub: React.FC<CourseAcademicHubProps> = ({
         </div>
 
         {/* Course Search & Select Box */}
-        <div className="pt-2 border-t border-slate-800/80">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">
+        <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 block">
             Select Course to Explore
           </label>
           <CourseSelector

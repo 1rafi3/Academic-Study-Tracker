@@ -140,21 +140,21 @@ export const EventResultModal: React.FC<EventResultModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden my-auto"
+        className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/80 bg-slate-950/60">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200/80 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/60">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-500/15 border border-indigo-200 dark:border-indigo-500/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
               <Award className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <h2 className="text-sm sm:text-base font-semibold text-slate-100 truncate">
+              <h2 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100 truncate">
                 {event.title}
               </h2>
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                <span className="px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-semibold">
+              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <span className="px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 text-[10px] font-semibold">
                   {event.eventType}
                 </span>
                 <span>•</span>
@@ -165,7 +165,7 @@ export const EventResultModal: React.FC<EventResultModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -173,13 +173,13 @@ export const EventResultModal: React.FC<EventResultModalProps> = ({
 
         {/* Existing Event Description (Read-Only Context) */}
         {event.description && (
-          <div className="px-5 py-2.5 bg-slate-950/40 border-b border-slate-800/60 flex items-start gap-2.5">
+          <div className="px-5 py-2.5 bg-slate-50/90 dark:bg-slate-950/40 border-b border-slate-200/80 dark:border-slate-800/60 flex items-start gap-2.5">
             <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-            <div className="text-xs text-slate-300">
-              <span className="font-semibold text-slate-400 text-[11px] block uppercase tracking-wider">
+            <div className="text-xs text-slate-700 dark:text-slate-300">
+              <span className="font-semibold text-slate-500 dark:text-slate-400 text-[11px] block uppercase tracking-wider">
                 Event Description / Syllabus
               </span>
-              <p className="mt-0.5 line-clamp-2 text-slate-300">{event.description}</p>
+              <p className="mt-0.5 line-clamp-2 text-slate-700 dark:text-slate-300">{event.description}</p>
             </div>
           </div>
         )}
@@ -188,24 +188,24 @@ export const EventResultModal: React.FC<EventResultModalProps> = ({
         <form onSubmit={handleSave} className="p-5 space-y-4">
           {/* Validation Error Alert */}
           {validationError && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
               <span>{validationError}</span>
             </div>
           )}
 
           {/* Marks Input Grid */}
-          <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
+          <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-950/70 border border-slate-200/90 dark:border-slate-800 space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-                <Award className="w-3.5 h-3.5 text-indigo-400" />
+              <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                <Award className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                 Assessment Performance
               </label>
               {(numObtained !== null || numFull !== null) && (
                 <button
                   type="button"
                   onClick={handleClearMarks}
-                  className="text-[10px] text-slate-400 hover:text-rose-400 flex items-center gap-1 transition cursor-pointer"
+                  className="text-[10px] text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 flex items-center gap-1 transition cursor-pointer"
                 >
                   <Trash2 className="w-3 h-3" />
                   Clear Marks
@@ -216,7 +216,7 @@ export const EventResultModal: React.FC<EventResultModalProps> = ({
             <div className="grid grid-cols-2 gap-3">
               {/* Obtained Marks */}
               <div className="space-y-1">
-                <span className="text-[11px] text-slate-400">Obtained Marks</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">Obtained Marks</span>
                 <input
                   type="number"
                   step="0.25"
@@ -225,13 +225,13 @@ export const EventResultModal: React.FC<EventResultModalProps> = ({
                   value={obtainedMarks}
                   onChange={(e) => setObtainedMarks(e.target.value)}
                   placeholder="e.g. 18"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-sm focus:outline-hidden focus:border-indigo-500 transition"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm focus:outline-hidden focus:border-indigo-500 transition"
                 />
               </div>
 
               {/* Full Marks */}
               <div className="space-y-1">
-                <span className="text-[11px] text-slate-400">Total / Full Marks</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">Total / Full Marks</span>
                 <input
                   type="number"
                   step="0.5"
@@ -239,43 +239,43 @@ export const EventResultModal: React.FC<EventResultModalProps> = ({
                   value={fullMarks}
                   onChange={(e) => setFullMarks(e.target.value)}
                   placeholder="e.g. 20"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-sm focus:outline-hidden focus:border-indigo-500 transition"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm focus:outline-hidden focus:border-indigo-500 transition"
                 />
               </div>
             </div>
 
             {/* Performance Badge / Status Preview */}
-            <div className="pt-2 flex items-center justify-between border-t border-slate-800/80 text-xs">
-              <span className="text-slate-400">Grading Status:</span>
+            <div className="pt-2 flex items-center justify-between border-t border-slate-200/80 dark:border-slate-800/80 text-xs">
+              <span className="text-slate-500 dark:text-slate-400">Grading Status:</span>
               {numObtained !== null && numFull !== null ? (
                 <div className="flex items-center gap-2">
                   <span
                     className={`font-semibold px-2 py-0.5 rounded-full text-[11px] border ${
                       calculatedPercentage! >= 80
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                        ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
                         : calculatedPercentage! >= 60
-                        ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30'
+                        ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/30'
                         : calculatedPercentage! >= 40
-                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                        : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                        ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30'
+                        : 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/30'
                     }`}
                   >
                     {numObtained} / {numFull} ({calculatedPercentage!.toFixed(1)}%)
                   </span>
                 </div>
               ) : numObtained !== null ? (
-                <span className="text-indigo-400 font-semibold">{numObtained} marks</span>
+                <span className="text-indigo-600 dark:text-indigo-400 font-semibold">{numObtained} marks</span>
               ) : (
-                <span className="text-slate-500 italic">Not Graded Yet</span>
+                <span className="text-slate-400 dark:text-slate-500 italic">Not Graded Yet</span>
               )}
             </div>
           </div>
 
           {/* Personal Notes (Distinct from Event Description) */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-200 flex items-center justify-between">
+            <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
-                <FileText className="w-3.5 h-3.5 text-indigo-400" />
+                <FileText className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                 Personal Performance Notes & Observations
               </span>
               <span className="text-[10px] text-slate-500">Private to you</span>
@@ -285,7 +285,7 @@ export const EventResultModal: React.FC<EventResultModalProps> = ({
               value={personalNotes}
               onChange={(e) => setPersonalNotes(e.target.value)}
               placeholder="e.g. Made mistakes in Q2 array pointers. Need to revise chapters 3 and 4 before finals."
-              className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500 transition resize-none placeholder:text-slate-600"
+              className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-200 text-xs focus:outline-hidden focus:border-indigo-500 transition resize-none placeholder:text-slate-400 dark:placeholder:text-slate-600"
             />
             <p className="text-[11px] text-slate-500">
               Note: This is your personal reflection. The event syllabus/description is preserved separately.
@@ -293,18 +293,18 @@ export const EventResultModal: React.FC<EventResultModalProps> = ({
           </div>
 
           {/* Completion Status Toggle */}
-          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between">
+          <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <CheckCircle2
                 className={`w-4 h-4 ${
-                  isCompleted ? 'text-emerald-400' : 'text-slate-500'
+                  isCompleted ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'
                 }`}
               />
               <div>
-                <span className="text-xs font-semibold text-slate-200 block">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 block">
                   Event Status
                 </span>
-                <span className="text-[11px] text-slate-400">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
                   {isCompleted
                     ? 'Marked as completed / attended'
                     : 'Upcoming / Pending'}
@@ -316,8 +316,8 @@ export const EventResultModal: React.FC<EventResultModalProps> = ({
               onClick={() => setIsCompleted(!isCompleted)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer border ${
                 isCompleted
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                  : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+                  ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/40'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
               {isCompleted ? 'Completed' : 'Mark Complete'}
@@ -330,7 +330,7 @@ export const EventResultModal: React.FC<EventResultModalProps> = ({
               type="button"
               onClick={onClose}
               disabled={mutation.isPending}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-transparent text-xs font-semibold transition cursor-pointer"
             >
               Cancel
             </button>

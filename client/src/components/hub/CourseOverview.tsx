@@ -132,7 +132,7 @@ export const CourseOverview: React.FC<CourseOverviewProps> = ({
   return (
     <div className="space-y-5">
       {/* Course Hero Banner */}
-      <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950/40 border border-slate-800 shadow-xl relative overflow-hidden">
+      <div className="p-5 rounded-2xl bg-gradient-to-br from-white via-slate-50 to-indigo-50/70 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/40 border border-slate-200/90 dark:border-slate-800 shadow-xl relative overflow-hidden">
         {/* Glow accent */}
         <div
           className="absolute -right-10 -bottom-10 w-44 h-44 rounded-full blur-3xl opacity-20 pointer-events-none"
@@ -143,28 +143,28 @@ export const CourseOverview: React.FC<CourseOverviewProps> = ({
           <div className="space-y-1.5 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               {course.courseCode && (
-                <span className="px-2.5 py-0.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-mono font-bold text-xs tracking-wider">
+                <span className="px-2.5 py-0.5 rounded-lg bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 dark:border-indigo-500/30 font-mono font-bold text-xs tracking-wider">
                   {course.courseCode}
                 </span>
               )}
-              <span className="px-2 py-0.5 rounded-lg bg-slate-800/80 text-slate-300 border border-slate-700 text-xs font-semibold">
+              <span className="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
                 {course.credit} Credits
               </span>
               {semester && (
-                <span className="px-2 py-0.5 rounded-lg bg-slate-800/80 text-slate-300 border border-slate-700 text-xs">
+                <span className="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs">
                   {semester.name} {semester.year}
                 </span>
               )}
             </div>
 
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
               {course.courseName}
             </h2>
 
             {course.instructor && (
-              <p className="text-xs text-slate-400 flex items-center gap-1.5 pt-0.5">
-                <User className="w-3.5 h-3.5 text-slate-500" />
-                <span>Instructor: <strong className="text-slate-300 font-medium">{course.instructor}</strong></span>
+              <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 pt-0.5">
+                <User className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                <span>Instructor: <strong className="text-slate-700 dark:text-slate-300 font-medium">{course.instructor}</strong></span>
               </p>
             )}
           </div>

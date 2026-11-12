@@ -76,10 +76,10 @@ function MainDashboard() {
         {/* Subtle Modern Tech Grid Pattern */}
         <div className="absolute inset-0 bg-grid-pattern mask-radial-faded" />
 
-        {/* Ambient atmospheric glow spots */}
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[34rem] h-[34rem] bg-indigo-600/15 dark:bg-indigo-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '8s' }} />
-        <div className="absolute -bottom-40 right-1/4 w-96 h-96 bg-violet-600/10 dark:bg-violet-600/15 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 left-10 w-72 h-72 bg-blue-600/10 dark:bg-blue-600/10 rounded-full blur-3xl" />
+        {/* Ambient atmospheric glow spots (active in dark mode; hidden in light mode to prevent screen glare & discoloration) */}
+        <div className="hidden dark:block absolute -top-40 left-1/2 -translate-x-1/2 w-[34rem] h-[34rem] bg-indigo-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '8s' }} />
+        <div className="hidden dark:block absolute -bottom-40 right-1/4 w-96 h-96 bg-violet-600/15 rounded-full blur-3xl" />
+        <div className="hidden dark:block absolute top-1/3 left-10 w-72 h-72 bg-blue-600/10 rounded-full blur-3xl" />
       </div>
 
       <div className="w-full max-w-[1580px] relative z-10 flex flex-col space-y-4 print:max-w-full print:space-y-0 print:m-0 print:p-0">
