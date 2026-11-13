@@ -1,11 +1,19 @@
 # Academic Study Tracker
 
-A modern MERN (MongoDB, Express, React, Node.js) web application for university students to track classes, attendance, academic schedules, topics, and study notes.
+A modern MERN (MongoDB, Express, React, Node.js) web application for university students to track classes, attendance, academic schedules, topics, assessments, and study notes.
+
+## Key Features
+
+- **Course Academic Hub & Events Explorer:** Manage course-wise academic events (CTs, Quizzes, Midterms, Finals), record obtained marks with strict validation, store private performance notes, and configure custom marks distribution structures.
+- **Smart Attendance Analytics & Forecasting:** Live attendance percentage calculations, SAFE/WARNING/DANGER indicators, Bunk Allowance, and Recovery Class requirements.
+- **Interactive Calendar & 90-Minute Routine Timetable:** Unified schedule matrix, multi-slot lab spanning, cancellation tracking, and holiday detection.
+- **Bangladesh Six Seasons (ষড়ঋতু) Dynamic Atmosphere:** Automatic astronomical season detection with lightweight ambient animations and seasonal settings.
+- **Dynamic Theme Engine & Eye-Comfort Aesthetics:** Glare-free, WCAG AA compliant light mode color grading alongside sleek modern glass and dark themes.
 
 ## Tech Stack
 
-- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, Lucide Icons
-- **Backend:** Node.js, Express.js, TypeScript
+- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, TanStack React Query, Lucide Icons
+- **Backend:** Node.js, Express.js, TypeScript, Appwrite Cloud JWT Auth
 - **Database:** MongoDB with Mongoose ODM
 
 ## Project Structure
